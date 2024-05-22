@@ -6,6 +6,9 @@ iniciar(X):- set_random(seed(X)).
 % Tabla con las trece categorías
 categorias([aces,twos,threes,fours,fives,sixes,three_of_a_kind,four_of_a_kind,full_house,small_straight,large_straight,yahtzee,chance]).
 
+% Tabla con las tres estrategias
+estrategias([humano,ia_det,ia_prob]).
+
 % Tablero inicial
 inicial([s(aces,nil),s(twos,nil),s(threes,nil),s(fours,nil),s(fives,nil),s(sixes,nil),s(three_of_a_kind,nil),s(four_of_a_kind,nil),s(full_house,nil),s(small_straight,nil),s(large_straight,nil),s(yahtzee,nil),s(chance,nil)]).
 
@@ -42,13 +45,13 @@ puntaje(Dados, sixes, Puntaje) :-
     contar(Dados, 6, Puntaje).
 
 puntaje(Dados, three_of_a_kind, Puntaje) :-
-    tiene_n_del_mismo_tipo(Dados, 3, _), 
+    tiene_n_del_mismo_tipo(Dados, 3, _),
     sumar_lista(Dados, Puntaje),
     !.
 puntaje(_, three_of_a_kind, 0).
 
 puntaje(Dados, four_of_a_kind, Puntaje) :-
-    tiene_n_del_mismo_tipo(Dados, 4, _), 
+    tiene_n_del_mismo_tipo(Dados, 4, _),
     sumar_lista(Dados, Puntaje).
 puntaje(_, four_of_a_kind, 0).
 
@@ -57,7 +60,7 @@ puntaje(Dados, full_house, 25) :-
 puntaje(_, full_house, 0).
 
 puntaje(Dados, small_straight, 30) :-
-    tiene_escalera_pequeña(Dados).
+    tiene_escalera_pequenha(Dados).
 puntaje(_, small_straight, 0).
 
 puntaje(Dados, large_straight, 40) :-
@@ -108,7 +111,7 @@ tiene_full_house(Dados) :-
     X =\= Y.
 
 % Verificar si hay una escalera pequeña (4 consecutivos)
-tiene_escalera_pequeña(Dados) :-
+tiene_escalera_pequenha(Dados) :-
     sort_unicos(Dados, DadosUnicos),
     (append(_, [1,2,3,4|_], DadosUnicos) ;
      append(_, [2,3,4,5|_], DadosUnicos) ;
@@ -152,7 +155,7 @@ puntaje_tablero(Tablero, Puntaje):-
     !.
 puntaje_tablero(Tablero, Puntaje):-
     puntaje_tablero_total(Tablero, Puntaje).
-    
+
 ajustar_tablero([s(Categoria, _) | RestoTablero], Categoria, Puntaje, TableroSalida):-
     TableroSalida = [s(Categoria, Puntaje) | RestoTablero],
     !.
@@ -160,7 +163,77 @@ ajustar_tablero([PuntajeCategoria | RestoTablero], Categoria, Puntaje, TableroSa
     ajustar_tablero(RestoTablero, Categoria, Puntaje, TableroSalidaAux),
     TableroSalida = [PuntajeCategoria | TableroSalidaAux].
 
+leer_estrategia(Estrategia) :-
+    write('Ingresar un numero para indicar la Estrategia: [1 = "humano"] , [2 = "ia_der"] y [3 = "ia_prob"] '), nl,
+    get_single_char(Char),
+    atom_chars(Atom, [Char]),  % Convertir el carácter a un átomo
+    (   atom_number(Atom, Numero), % Convertir el átomo a un número
+        between(1, 3, Numero) -> % Verificar que el número esté en el rango [1, 3]
+        Estrategia = Numero
+    ;   write('Entrada invalida, por favor ingrese un numero entre el rango [1-3]: '), nl,
+        leer_estrategia(Estrategia) % Llamada recursiva si la entrada no es válida
+    ).
 
+estrategia_por_numero(1, 'humano').
+estrategia_por_numero(2, 'ia_der').
+estrategia_por_numero(3, 'ia_prob').
 
+procesar_estrategia(Num, Estrategia) :-
+    estrategia_por_numero(Num, Estrategia), !. % Utilizamos corte para evitar backtracking
 
+mostrar_dados([]) :-
+    nl.
+mostrar_dados([Dado|DadosRestantes]) :-
+    write(Dado),
+    write(' , '),
+    mostrar_dados(DadosRestantes).
 
+%+Dados,+Tablero,+Estrategia,-Categoria
+%Mediante entrada y salida se debe de ingresar la categoría y aplicar los cambios correspondientes al tablero
+eleccion_slot(_,_,_,_) :- !.
+
+% +Dados,+Tablero,+Estrategia,-Patron
+% Al que no le guste que esta funcion haga esto, le reto a hacerla por si mismo ;)
+cambio_dados(Dados,Tablero,humano,_)  :-
+    elegir_patron(Patrones1,5),
+    lanzamiento(Dados, Patrones1, NuevosDados1),
+    mostrar_dados(NuevosDados1),
+    elegir_patron(Patrones2,5),
+    lanzamiento(NuevosDados1, Patrones2, NuevosDados2),
+    mostrar_dados(NuevosDados2),
+    eleccion_slot(NuevosDados2, Tablero, humano, _).
+
+elegir_patron(_, 0).
+elegir_patron([Patron|RestoPatron], Repetir) :-
+    Repetir > 0,
+    write('Ingresar un numero para cambiar el dado: [0 = Mantener] , [1 = Cambiar] '), nl,
+    get_single_char(Char),
+    atom_chars(Atom, [Char]),  % Convertir el carácter a un átomo
+    (   atom_number(Atom, Numero), % Convertir el átomo a un número
+        between(0, 1, Numero) -> % Verificar que el número esté en el rango [0, 1]
+        Patron is Numero,
+        NuevoRepetir is Repetir - 1,
+        elegir_patron(RestoPatron, NuevoRepetir)
+    ;   write('Entrada invalida, por favor ingrese un numero entre el rango [0-1]: '), nl,
+        elegir_patron([Patron|RestoPatron], Repetir) % Llamada recursiva si la entrada no es válida
+    ).
+
+%Falta que se implemente eleccion_slot para que puntaje_tablero lo calcule correctamente
+yahtzee(0, _, Tablero) :-
+    write('Fin del Juego, se ha conseguido '),
+    %puntaje_tablero(Tablero,Puntaje),
+    %write(Puntaje),
+    write(' puntos.'),
+    !.
+yahtzee(Repetir, Estrategia, Tablero) :-
+    lanzamiento(_,[1,1,1,1,1],Dados),
+    mostrar_dados(Dados),
+    cambio_dados(Dados, _, Estrategia, _),
+    NuevoRepetir is Repetir - 1,
+    yahtzee(NuevoRepetir, Estrategia, Tablero).
+
+yahtzeelog :-
+    leer_estrategia(Numero),
+    procesar_estrategia(Numero, Estrategia),
+    %write(Estrategia),
+    yahtzee(13, Estrategia, _).
