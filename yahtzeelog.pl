@@ -34,7 +34,8 @@ tiro_dado(X):-
 puntaje(Dados, Cat, Puntaje) :-
     categorias_seccion_superior(CategoriasSuperior),
     member(m(Num, Cat), CategoriasSuperior),
-    contar(Dados, Num, Puntaje).
+    contar(Dados, Num, Puntaje),
+    !.
 
 puntaje(Dados, three_of_a_kind, Puntaje) :-
     tiene_n_del_mismo_tipo(Dados, 3, _),
@@ -106,18 +107,17 @@ tiene_n_de_tipo([Dado | RestoDados], Tipo, N):-
     Dado \= Tipo,
     tiene_n_de_tipo(RestoDados, Tipo, N).
 
-% Verificar si hay una escalera pequeña (4 consecutivos)  (hay que cambiar los or con ";")
+% Verificar si hay una escalera pequeña (4 consecutivos)
 tiene_escalera_pequenia(Dados) :-
     sort_unicos(Dados, DadosUnicos),
-    (append(_, [1,2,3,4|_], DadosUnicos) ;
-     append(_, [2,3,4,5|_], DadosUnicos) ;
-     append(_, [3,4,5,6|_], DadosUnicos)).
+    member(Escalera, [[1,2,3,4], [2,3,4,5], [3,4,5,6]]),
+    append(_, X, DadosUnicos),
+    append(Escalera, _, X).
 
-% Verificar si hay una escalera grande (5 consecutivos)  (hay que cambiar los or con ";")
+% Verificar si hay una escalera grande (5 consecutivos)
 tiene_escalera_grande(Dados) :-
     sort_unicos(Dados, DadosUnicos),
-    (DadosUnicos = [1,2,3,4,5] ;
-     DadosUnicos = [2,3,4,5,6]).
+    member(DadosUnicos, [[1,2,3,4,5],[2,3,4,5,6]]),
 
 % Hace sort de una lista, y devuelve la lista sin repeticiones
 sort_unicos(List, Sorted) :-
