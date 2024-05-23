@@ -44,7 +44,7 @@ puntaje(Dados, three_of_a_kind, Puntaje) :-
 puntaje(_, three_of_a_kind, 0).
 
 puntaje(Dados, four_of_a_kind, Puntaje) :-
-    tiene_n_del_mismo_tipo(Dados, 4, _), 
+    tiene_n_del_mismo_tipo(Dados, 4, _),
     sumar_lista(Dados, Puntaje),
     !.
 puntaje(_, four_of_a_kind, 0).
@@ -117,7 +117,7 @@ tiene_escalera_pequenia(Dados) :-
 % Verificar si hay una escalera grande (5 consecutivos)
 tiene_escalera_grande(Dados) :-
     sort_unicos(Dados, DadosUnicos),
-    member(DadosUnicos, [[1,2,3,4,5],[2,3,4,5,6]]),
+    member(DadosUnicos, [[1,2,3,4,5],[2,3,4,5,6]]).
 
 % Hace sort de una lista, y devuelve la lista sin repeticiones
 sort_unicos(List, Sorted) :-
@@ -163,7 +163,7 @@ ajustar_tablero([s(Categoria, _) | RestoTablero], Categoria, Puntaje, TableroSal
 ajustar_tablero([PuntajeCategoria | RestoTablero], Categoria, Puntaje, TableroSalida):-
     ajustar_tablero(RestoTablero, Categoria, Puntaje, TableroSalidaAux),
     TableroSalida = [PuntajeCategoria | TableroSalidaAux].
-    
+
 
 %---------------------------------------------
 
@@ -175,7 +175,7 @@ map_puntajes([s(Categoria, nil) | RestoPuntajes ], Dados, [s(Categoria, PuntajeC
     !.
 map_puntajes([_ | RestoPuntajes], Dados, PuntajesCategoria):-
     map_puntajes(RestoPuntajes, Dados, PuntajesCategoria).
-    
+
 % Inserta de forma ordenada el puntaje
 insertar_puntaje(s(Cat1, Puntaje1), [], [s(Cat1, Puntaje1)]).
 insertar_puntaje(s(Cat1, Puntaje1), [s(Cat2, Puntaje2)|Resto], [s(Cat1, Puntaje1),s(Cat2, Puntaje2)|Resto]) :-
@@ -224,6 +224,7 @@ elegir_patron([Patron|RestoPatron], Repetir) :-
         elegir_patron([Patron|RestoPatron], Repetir) % Llamada recursiva si la entrada no es válida
     ).
 
+%Se llama a yahtzee para jugar con un humano
 yahtzee(humano, Seed):-
      inicial(Tablero), % Genero tablero inicial
      iniciar(Seed),    % Coloco semilla para numeros aleatorios
@@ -244,7 +245,7 @@ yahtzee(Repetir, Tablero) :-
     write('Dados: '), write(NuevosDados1), nl,
     cambio_dados(NuevosDados1, Tablero, Estrategia, Patron2),
     lanzamiento(NuevosDados1, Patron2, NuevosDados2),
-    write('Dados: '), write(NuevosDados2), nl,
+    write('Dados: '), write(NuevosDados2), nl, nl,
     eleccion_slot(NuevosDados2, Tablero, humano, CategoriaSlot),
     puntaje(NuevosDados2, CategoriaSlot, PuntosCategoriaSeleccionada),
     ajustar_tablero(Tablero, CategoriaSlot, PuntosCategoriaSeleccionada, NuevoTablero),
@@ -254,6 +255,7 @@ yahtzee(Repetir, Tablero) :-
 % ---------------------------------------
 % Es igual que yahtzee(humano) pero sin mostrar los dados en cada turno, no entiendo bien la diferencia entre ambos excepto por eso
 
+%Se llama a yahtzeelog para jugar con un bot (ia_det o ia_prob)
 yahtzeelog(Estrategia, Seed):-
     estrategias(ests),
     member(Estrategia, ests),
