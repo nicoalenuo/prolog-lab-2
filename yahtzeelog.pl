@@ -31,11 +31,13 @@ lanzamiento([_|T],[1|T1],[X1|T2]):-
 tiro_dado(X):-
     random(1,7,X).
 
+% -------------------------------------------
+
 % Puntaje para cada categoria
 puntaje(Dados, Cat, Puntaje) :-
-    categorias_seccion_superior(CategoriasSuperior),
-    member(m(Num, Cat), CategoriasSuperior),
-    contar(Dados, Num, Puntaje),
+    categorias_seccion_superior(CategoriasSuperior), % Obtengo las categorias de la seccion superior
+    member(m(Num, Cat), CategoriasSuperior), % Chequeo si la categoria pasada como argumento es de la seccion superior
+    contar(Dados, Num, Puntaje), % Cuento el puntaje obtenido por el numero correposndiente a la categoria
     !.
 
 puntaje(Dados, three_of_a_kind, Puntaje) :-
@@ -148,28 +150,25 @@ puntaje_tablero_total([s(_, PuntajeCategoria) | RestoTablero], Puntaje):-
     Puntaje is PuntajeAux + PuntajeCategoria.
 
 puntaje_tablero(Tablero, Puntaje):-
-    puntaje_tablero_seccion_superior(Tablero, Puntaje2),
-    Puntaje2 > 63,
+    puntaje_tablero_seccion_superior(Tablero, Puntaje2), % Obtengo el puntaje de la seccion superior
+    Puntaje2 >= 63, %Si es mayor o igual a 63, agrega 35 puntos
     puntaje_tablero_total(Tablero, Puntaje3),
     Puntaje is Puntaje3 + 35,
     !.
-puntaje_tablero(Tablero, Puntaje):-
+puntaje_tablero(Tablero, Puntaje):- % Si el puntaje de la seccion superior no es mayor a 63 puntos, no agrega los 35 puntos extra
     puntaje_tablero_total(Tablero, Puntaje).
 
 %---------------------------------------------
 
-ajustar_tablero([s(Categoria, _) | RestoTablero], Categoria, Puntaje, TableroSalida):-
-    TableroSalida = [s(Categoria, Puntaje) | RestoTablero],
+ajustar_tablero([s(Categoria, _) | RestoTablero], Categoria, Puntaje, [s(Categoria, Puntaje) | RestoTablero]):-
     !.
-ajustar_tablero([PuntajeCategoria | RestoTablero], Categoria, Puntaje, TableroSalida):-
-    ajustar_tablero(RestoTablero, Categoria, Puntaje, TableroSalidaAux),
-    TableroSalida = [PuntajeCategoria | TableroSalidaAux].
-
+ajustar_tablero([PuntajeCategoria | RestoTablero], Categoria, Puntaje, [PuntajeCategoria | TableroSalidaAux]):-
+    ajustar_tablero(RestoTablero, Categoria, Puntaje, TableroSalidaAux).
 
 %---------------------------------------------
 
 % Mapeo todas las categorias aun no elegidas a sus respectivos puntajes
-map_puntajes([],_,[]).
+map_puntajes([], _, []).
 map_puntajes([s(Categoria, nil) | RestoPuntajes ], Dados, [s(Categoria, PuntajeCategoria) | RestoPuntajesCategoria]):-
     puntaje(Dados, Categoria, PuntajeCategoria),
     map_puntajes(RestoPuntajes, Dados, RestoPuntajesCategoria),
@@ -233,7 +232,10 @@ eleccion_slot(Dados, Tablero, ia_det, Categoria):- % Devuelvo la categoria que d
      map_puntajes(Tablero, Dados, PuntajesCategoria),
      ordenar_por_puntaje(PuntajesCategoria, [s(Categoria, _) | _]).
 
-% Al que no le guste que esta funcion haga esto, le reto a hacerla por si mismo ;)
+% eleccion_slot(Dados, Tablero, ia_prob, Categoria):-
+
+% --------------------------------------------------
+
 cambio_dados(_, _, humano, Patron)  :-
     elegir_patron(Patron, 5).
 
@@ -254,32 +256,32 @@ elegir_patron([Patron|RestoPatron], Repetir) :-
 mostrar_tablero([]) :- nl.
 
 mostrar_tablero([s(Categoria, nil) | Resto]) :-
-    write(' -'), write(Categoria), write(': _'),nl, % asignadon\'t
+    write(' -'), write(Categoria), write(': _'), nl, % asignadon\'t
     mostrar_tablero(Resto).
 
 mostrar_tablero([s(Categoria, Puntos) | Resto]) :-
     write(' -'), write(Categoria), write(': '), write(Puntos), write(' puntos.'), nl,
     mostrar_tablero(Resto).
 
-%Se llama a yahtzee para jugar con un humano
+% ------------------------------------------------
+
+% Se llama a yahtzee para jugar con un humano
 yahtzee(humano, Seed):-
      inicial(Tablero), % Genero tablero inicial
      iniciar(Seed),    % Coloco semilla para numeros aleatorios
      yahtzee(13, Tablero).
 
 yahtzee(0, Tablero) :-
-    write('Fin del Juego, se ha conseguido '),
     puntaje_tablero(Tablero, Puntaje),
-    write(Puntaje),
-    write(' puntos.'),
+    write('Fin del Juego, se han conseguido '), write(Puntaje), write(' puntos.'),
     !.
 yahtzee(Repetir, Tablero) :-
     lanzamiento(_, [1,1,1,1,1], Dados),
     write('Dados: '), write(Dados), nl,
-    cambio_dados(Dados, Tablero, Estrategia, Patron1),
+    cambio_dados(Dados, Tablero, humano, Patron1),
     lanzamiento(Dados, Patron1, NuevosDados1),
     write('Dados: '), write(NuevosDados1), nl,
-    cambio_dados(NuevosDados1, Tablero, Estrategia, Patron2),
+    cambio_dados(NuevosDados1, Tablero, humano, Patron2),
     lanzamiento(NuevosDados1, Patron2, NuevosDados2),
     write('Dados: '), write(NuevosDados2), nl, nl,
     eleccion_slot(NuevosDados2, Tablero, humano, CategoriaSlot),
@@ -295,8 +297,9 @@ yahtzee(Repetir, Tablero) :-
 
 % ---------------------------------------
 % Es igual que yahtzee(humano) pero sin mostrar los dados en cada turno, no entiendo bien la diferencia entre ambos excepto por eso
+% Pero la letra pide que hayan dos diferentes
 
-%Se llama a yahtzeelog para jugar con un bot (ia_det o ia_prob)
+% Se llama a yahtzeelog para jugar con un bot (ia_det o ia_prob)
 yahtzeelog(Estrategia, Seed):-
     estrategias(ests),
     member(Estrategia, ests),
@@ -305,10 +308,8 @@ yahtzeelog(Estrategia, Seed):-
     yahtzee(13, Estrategia, Tablero).
 
 yahtzeelog(0, _, Tablero) :-
-    write('Fin del Juego, se ha conseguido '),
     puntaje_tablero(Tablero, Puntaje),
-    write(Puntaje),
-    write(' puntos.'),
+    write('Fin del Juego, se han conseguido '), write(Puntaje), write(' puntos.'),
     !.
 yahtzeelog(Repetir, Estrategia, Tablero) :-
     lanzamiento(_, [1,1,1,1,1], Dados),
