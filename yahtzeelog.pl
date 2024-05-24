@@ -1,4 +1,5 @@
 :- use_module(library(random)).
+:- use_module(library(readutil)).
 
 % Setea el estado inicial del generador de números aleatorios
 iniciar(X):- set_random(seed(X)).
@@ -190,6 +191,32 @@ ordenar_por_puntaje([X|Resto], Ordenada) :-
     ordenar_por_puntaje(Resto, OrdenadaResto),
     insertar_puntaje(X, OrdenadaResto, Ordenada).
 
+% Muestra en pantalla las posibles categorias a elegir, junto con los puntos que sumaria si se eligiera
+mostrar_slots_disponibles([],_).
+mostrar_slots_disponibles([s(Categ, Puntos)|Resto], Num) :-
+    write('  '), write(Num), write(' - '), write(Categ), write(' - '), write(Puntos), nl,
+    Num2 is Num + 1, % incrementa el identificador (el indice en la lista impresa)
+    mostrar_slots_disponibles(Resto, Num2).
+
+eleccion_slot(Dados, Tablero, humano, Categoria) :-
+    map_puntajes(Tablero, Dados, PuntajesCategoria), 
+    write('Categorias por completar: [id - categoria - puntos que suma] '), nl,
+    mostrar_slots_disponibles(PuntajesCategoria, 1), nl,
+
+    write('Seleccione una categoria indicando el numero id.'), nl,
+    flush_output(current_output),
+    read_line_to_string(user_input, Entrada),
+
+    length(PuntajesCategoria, CantDisponibles),
+    (
+        atom_number(Entrada, NroElegido),
+        between(1, CantDisponibles, NroElegido),
+        nth1(NroElegido, PuntajesCategoria, s(Categoria, _))
+    ;   
+        nl, write('Entrada invalida, por favor ingrese un numero entre el rango [1 - '), write(CantDisponibles), write('].'), nl, nl,
+        eleccion_slot(Dados, Tablero, humano, Categoria)
+    ).
+    
 eleccion_slot(Dados, Tablero, ia_det, Categoria):-
      map_puntajes(Tablero, Dados, PuntajesCategoria),
      categorias_seccion_superior(CategoriasSuperior),
@@ -224,13 +251,22 @@ elegir_patron([Patron|RestoPatron], Repetir) :-
         elegir_patron([Patron|RestoPatron], Repetir) % Llamada recursiva si la entrada no es válida
     ).
 
+mostrar_tablero([]) :- nl.
+
+mostrar_tablero([s(Categoria, nil) | Resto]) :-
+    write(' -'), write(Categoria), write(': _'),nl, % asignadon\'t
+    mostrar_tablero(Resto).
+
+mostrar_tablero([s(Categoria, Puntos) | Resto]) :-
+    write(' -'), write(Categoria), write(': '), write(Puntos), write(' puntos.'), nl,
+    mostrar_tablero(Resto).
+
 %Se llama a yahtzee para jugar con un humano
 yahtzee(humano, Seed):-
      inicial(Tablero), % Genero tablero inicial
      iniciar(Seed),    % Coloco semilla para numeros aleatorios
      yahtzee(13, Tablero).
 
-%Falta que se implemente eleccion_slot para que puntaje_tablero lo calcule correctamente
 yahtzee(0, Tablero) :-
     write('Fin del Juego, se ha conseguido '),
     puntaje_tablero(Tablero, Puntaje),
@@ -250,6 +286,11 @@ yahtzee(Repetir, Tablero) :-
     puntaje(NuevosDados2, CategoriaSlot, PuntosCategoriaSeleccionada),
     ajustar_tablero(Tablero, CategoriaSlot, PuntosCategoriaSeleccionada, NuevoTablero),
     NuevoRepetir is Repetir - 1,
+    
+    % Luego de actualizar el tablero, se muestra en pantalla para que el jugador vea como va su partida y decida en la proxima ronda
+    nl, write('Estado actual del tablero:'), nl,
+    mostrar_tablero(NuevoTablero),
+    
     yahtzee(NuevoRepetir, NuevoTablero).
 
 % ---------------------------------------
