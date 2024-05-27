@@ -246,7 +246,8 @@ eleccion_slot(Dados, Tablero, ia_det, Categoria):- % Devuelvo la categoria que d
 
 % --------------------------------------------------
 
-
+cambio_dados(_, _, humano, Patron)  :-
+    elegir_patron(Patron, 5).
 
 elegir_patron(_, 0).
 elegir_patron([Patron|RestoPatron], Repetir) :-
