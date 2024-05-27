@@ -110,6 +110,16 @@ tiene_n_de_tipo([Dado | RestoDados], Tipo, N):-
     Dado \= Tipo,
     tiene_n_de_tipo(RestoDados, Tipo, N).
 
+% Verificar si hay una semi escalera pequeña (3 consecutivos), se usa en el cambiar dados de ia_det
+tiene_semi_escalera_pequenia(Dados) :-
+    sort_unicos(Dados, DadosUnicos),
+    member(Sublista,[[1,2,3],[2,3,4],[3,4,5],[4,5,6]]),
+    sublist(Sublista, DadosUnicos).
+
+sublist([], _).
+sublist([X|Xs], Ys) :-
+    append(_, [X|Suffix], Ys),
+    sublist(Xs, Suffix).
 % Verificar si hay una escalera pequeña (4 consecutivos)
 tiene_escalera_pequenia(Dados) :-
     sort_unicos(Dados, DadosUnicos),
@@ -236,8 +246,7 @@ eleccion_slot(Dados, Tablero, ia_det, Categoria):- % Devuelvo la categoria que d
 
 % --------------------------------------------------
 
-cambio_dados(_, _, humano, Patron)  :-
-    elegir_patron(Patron, 5).
+
 
 elegir_patron(_, 0).
 elegir_patron([Patron|RestoPatron], Repetir) :-
@@ -253,8 +262,151 @@ elegir_patron([Patron|RestoPatron], Repetir) :-
         elegir_patron([Patron|RestoPatron], Repetir) % Llamada recursiva si la entrada no es válida
     ).
 
-mostrar_tablero([]) :- nl.
 
+    cambio_dados(Dados, Tablero, ia_det, Patron) :-
+        tiene_n_del_mismo_tipo(Dados,3,Tipo),
+        tiene_n_del_mismo_tipo(Dados,2,Tipo2),
+        member(s(full_house,nil),Tablero),
+        posicionesRepetido(Dados,Tipo,Patron1),
+        posicionesRepetido(Dados,Tipo2,Patron2),
+        unificadorPatrones(Patron1,Patron2,Patron).
+    
+    cambio_dados(Dados, Tablero, ia_det, Patron) :-
+        tiene_n_del_mismo_tipo(Dados,2,Tipo),
+        tiene_n_del_mismo_tipo(Dados,2,Tipo2),
+        Tipo =\= Tipo2,
+        member(s(full_house,nil),Tablero),
+        posicionesRepetido(Dados,Tipo,Patron1),
+        posicionesRepetido(Dados,Tipo2,Patron2),
+        unificadorPatrones(Patron1,Patron2,Patron).
+    
+    cambio_dados(Dados, Tablero, ia_det, Patron) :-
+        tiene_n_del_mismo_tipo(Dados,5,_),
+        member(s(yahtzee,nil),Tablero),
+        Patron = [0,0,0,0,0].
+    
+    cambio_dados(Dados, Tablero, ia_det, Patron) :-
+        member(s(large_straight,nil),Tablero),
+        tiene_escalera_grande(Dados),
+        Patron = [0,0,0,0,0].
+    
+    cambio_dados(Dados, Tablero, ia_det, Patron) :-
+        member(s(small_straight,nil),Tablero),
+        tiene_escalera_pequenia(Dados),
+        sort_unicos(Dados,ValoresOrdenados),
+        creadorPatronEscalera(Dados,ValoresOrdenados,Patron).
+    
+    cambio_dados(Dados, Tablero, ia_det, Patron) :-
+        member(s(small_straight,nil),Tablero),
+        tiene_semi_escalera_pequenia(Dados),
+        member(Sublista,[[3,4,5],[1,2,3],[2,3,4],[4,5,6]]),
+        sublist(Sublista, Dados),
+        creadorPatronEscalera(Dados,Sublista,Patron).
+    
+    cambio_dados(Dados, Tablero, ia_det, Patron) :-
+        tiene_n_del_mismo_tipo(Dados,5,Tipo),
+        categorias_seccion_superior(Lista),
+        member(m(Tipo,Cat),Lista),
+        member(s(Cat,nil),Tablero),
+        posicionesRepetido(Dados,Tipo,Patron).
+    
+    cambio_dados(Dados, Tablero, ia_det, Patron) :-
+        tiene_n_del_mismo_tipo(Dados,4,Tipo),
+        categorias_seccion_superior(Lista),
+        member(m(Tipo,Cat),Lista),
+        member(s(Cat,nil),Tablero),
+        posicionesRepetido(Dados,1,Patron).
+    
+    cambio_dados(Dados, Tablero, ia_det, Patron) :-
+        tiene_n_del_mismo_tipo(Dados,3,Tipo),
+        categorias_seccion_superior(Lista),
+        member(m(Tipo,Cat),Lista),
+        member(s(Cat,nil),Tablero),
+        posicionesRepetido(Dados,Tipo,Patron).
+    
+    cambio_dados(Dados, Tablero, ia_det, Patron) :-
+        tiene_n_del_mismo_tipo(Dados,2,Tipo),
+        categorias_seccion_superior(Lista),
+        member(m(Tipo,Cat),Lista),
+        member(s(Cat,nil),Tablero),
+        posicionesRepetido(Dados,Tipo,Patron).
+    
+    
+    cambio_dados(Dados, Tablero, ia_det, Patron) :-
+        tiene_n_del_mismo_tipo(Dados,5,_),
+        member(s(four_of_a_kind,nil),Tablero),
+        Patron = [0,0,0,0,0].
+    
+    cambio_dados(Dados, Tablero, ia_det, Patron) :-
+        tiene_n_del_mismo_tipo(Dados,4,Tipo),
+        member(s(four_of_a_kind,nil),Tablero),
+        posicionesRepetido(Dados,Tipo,Patron).
+    
+    cambio_dados(Dados, Tablero, ia_det, Patron) :-
+        tiene_n_del_mismo_tipo(Dados,3,Tipo),
+        member(s(four_of_a_kind,nil),Tablero),
+        posicionesRepetido(Dados,Tipo,Patron).
+    
+    cambio_dados(Dados, Tablero, ia_det, Patron) :-
+        tiene_n_del_mismo_tipo(Dados,2,Tipo),
+        member(s(four_of_a_kind,nil),Tablero),
+        posicionesRepetido(Dados,Tipo,Patron).
+    
+    cambio_dados(Dados, Tablero, ia_det, Patron) :-
+        tiene_n_del_mismo_tipo(Dados,3,Tipo),
+        member(s(four_of_a_kind,nil),Tablero),
+        posicionesRepetido(Dados,Tipo,Patron).
+    
+    cambio_dados(Dados, Tablero, ia_det, Patron) :-
+        tiene_n_del_mismo_tipo(Dados,3,Tipo),
+        member(s(three_of_a_kind,nil),Tablero),
+        posicionesRepetido(Dados,Tipo,Patron).
+        
+    cambio_dados(Dados, Tablero, ia_det, Patron) :-
+        tiene_n_del_mismo_tipo(Dados,2,Tipo),
+        member(s(three_of_a_kind,nil),Tablero),
+        posicionesRepetido(Dados,Tipo,Patron).
+    
+    cambio_dados(_, _, ia_det, [1,1,1,1,1]).
+    
+    posicionesRepetido([],_,[]).
+    posicionesRepetido([Dado|RestoDados],Num,[N|RestoLista]) :-
+        Dado =:= Num,
+        N is 0,
+        posicionesRepetido(RestoDados,Num,RestoLista).
+    posicionesRepetido([Dado|RestoDados],Num,[N|RestoLista]):-
+        Dado =\= Num,
+        N is 1,
+        posicionesRepetido(RestoDados,Num,RestoLista).
+    
+    
+    
+    unificadorPatrones([],[],[]).
+    
+    unificadorPatrones([0|RestoPatron1],[_|RestoPatron2],[0|Patron]):-
+        unificadorPatrones(RestoPatron1,RestoPatron2,Patron).
+    
+    unificadorPatrones([_|RestoPatron1],[0|RestoPatron2],[0|Patron]):-
+        unificadorPatrones(RestoPatron1,RestoPatron2,Patron).
+    
+    unificadorPatrones([1|RestoPatron1],[1|RestoPatron2],[1|Patron]):-
+        unificadorPatrones(RestoPatron1,RestoPatron2,Patron).
+    
+    
+    creadorPatronEscalera([], _, []).
+    creadorPatronEscalera([Dado|RestoDados], DatosUnicos, [0|Patron]):-
+        member(Dado, DatosUnicos), % Comprueba si Dado está en DatosUnicos
+        !,
+        subtract(DatosUnicos, [Dado], NuevosDatosUnicos), % Elimina una ocurrencia de Dado de DatosUnicos
+        creadorPatronEscalera(RestoDados, NuevosDatosUnicos, Patron).
+    
+    creadorPatronEscalera([_|RestoDados], DatosUnicos, [1|Patron]):-
+        creadorPatronEscalera(RestoDados, DatosUnicos, Patron).
+    
+    
+
+
+mostrar_tablero([]) :- nl.
 mostrar_tablero([s(Categoria, nil) | Resto]) :-
     write(' -'), write(Categoria), write(': _'), nl, % asignadon\'t
     mostrar_tablero(Resto).
