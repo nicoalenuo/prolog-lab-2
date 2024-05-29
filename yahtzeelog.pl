@@ -279,6 +279,12 @@ cambio_dados(Dados, Tablero, ia_det, Patron) :-
     Patron = [0,0,0,0,0].
 
 cambio_dados(Dados, Tablero, ia_det, Patron) :-
+    member(s(large_straight,nil),Tablero),
+    tiene_escalera_pequenia(Dados),
+    sort_unicos(Dados,ValoresOrdenados),
+    creadorPatronEscalera(Dados,ValoresOrdenados,Patron).
+
+cambio_dados(Dados, Tablero, ia_det, Patron) :-
     member(s(small_straight,nil),Tablero),
     tiene_escalera_pequenia(Dados),
     sort_unicos(Dados,ValoresOrdenados),
