@@ -248,6 +248,11 @@ eleccion_slot(Dados, Tablero, ia_det, Categoria):- % Devuelvo la categoria que d
 
 % --------------------------------------------------
 
+cambio_dados(Dados, Tablero, ia_det, Patron) :-
+    tiene_n_del_mismo_tipo(Dados,5,_),
+    member(s(yahtzee,nil),Tablero),
+    Patron = [0,0,0,0,0].
+
 cambio_dados(_, _, humano, Patron)  :-
     elegir_patron(Patron, 5).
 
@@ -267,11 +272,6 @@ cambio_dados(Dados, Tablero, ia_det, Patron) :-
     posicionesRepetido(Dados,Tipo,Patron1),
     posicionesRepetido(Dados,Tipo2,Patron2),
     unificadorPatrones(Patron1,Patron2,Patron).
-
-cambio_dados(Dados, Tablero, ia_det, Patron) :-
-    tiene_n_del_mismo_tipo(Dados,5,_),
-    member(s(yahtzee,nil),Tablero),
-    Patron = [0,0,0,0,0].
 
 cambio_dados(Dados, Tablero, ia_det, Patron) :-
     member(s(large_straight,nil),Tablero),
