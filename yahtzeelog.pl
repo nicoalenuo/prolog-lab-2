@@ -229,6 +229,7 @@ eleccion_slot(Dados, Tablero, humano, Categoria) :-
 
 eleccion_slot(Dados, Tablero, ia_det, Categoria):-
      map_puntajes(Tablero, Dados, PuntajesCategoria),
+     mostrar_slots_disponibles(PuntajesCategoria, 1), nl,
      categorias_seccion_superior(CategoriasSuperior),
      member(m(X, Categoria), CategoriasSuperior),
      member(s(Categoria, PuntajeCat), PuntajesCategoria),
@@ -239,7 +240,7 @@ eleccion_slot(Dados, Tablero, ia_det, Categoria):-
      \+ member(s(yahtzee, 50), PuntajesCategoria),
      !.
 
-eleccion_slot(Dados, Tablero, ia_det, Categoria):- % Devuelvo la categoria que de el mayor puntaje en caso de que no se cumplan las conidiciones anteriores
+eleccion_slot(Dados, Tablero, ia_det, Categoria):- % Devuelvo la categoria que de el mayor puntaje en caso de que no se cumplan las condiciones anteriores
      map_puntajes(Tablero, Dados, PuntajesCategoria),
      ordenar_por_puntaje(PuntajesCategoria, [s(Categoria, _) | _]).
 
@@ -249,21 +250,6 @@ eleccion_slot(Dados, Tablero, ia_det, Categoria):- % Devuelvo la categoria que d
 
 cambio_dados(_, _, humano, Patron)  :-
     elegir_patron(Patron, 5).
-
-elegir_patron(_, 0).
-elegir_patron([Patron|RestoPatron], Repetir) :-
-    Repetir > 0,
-    write('Ingresar un numero para cambiar el dado: [0 = Mantener] , [1 = Cambiar] '), nl,
-    get_single_char(Char),
-    atom_chars(Atom, [Char]),  % Convertir el carácter a un átomo
-    (   atom_number(Atom, Patron), % Convertir el átomo a un número
-        between(0, 1, Patron) -> % Verificar que el número esté en el rango [0, 1]
-        NuevoRepetir is Repetir - 1,
-        elegir_patron(RestoPatron, NuevoRepetir)
-    ;   write('Entrada invalida, por favor ingrese un numero entre el rango [0-1]: '), nl,
-        elegir_patron([Patron|RestoPatron], Repetir) % Llamada recursiva si la entrada no es válida
-    ).
-
 
 cambio_dados(Dados, Tablero, ia_det, Patron) :-
     tiene_n_del_mismo_tipo(Dados,3,Tipo),
@@ -371,6 +357,20 @@ cambio_dados(Dados, Tablero, ia_det, Patron) :-
 
 cambio_dados(_, _, ia_det, [1,1,1,1,1]).
 
+elegir_patron(_, 0).
+elegir_patron([Patron|RestoPatron], Repetir) :-
+    Repetir > 0,
+    write('Ingresar un numero para cambiar el dado: [0 = Mantener] , [1 = Cambiar] '), nl,
+    get_single_char(Char),
+    atom_chars(Atom, [Char]),  % Convertir el carácter a un átomo
+    (   atom_number(Atom, Patron), % Convertir el átomo a un número
+        between(0, 1, Patron) -> % Verificar que el número esté en el rango [0, 1]
+        NuevoRepetir is Repetir - 1,
+        elegir_patron(RestoPatron, NuevoRepetir)
+    ;   write('Entrada invalida, por favor ingrese un numero entre el rango [0-1]: '), nl,
+        elegir_patron([Patron|RestoPatron], Repetir) % Llamada recursiva si la entrada no es válida
+    ).
+
 posicionesRepetido([],_,[]).
 posicionesRepetido([Dado|RestoDados],Num,[N|RestoLista]) :-
     Dado =:= Num,
@@ -380,8 +380,6 @@ posicionesRepetido([Dado|RestoDados],Num,[N|RestoLista]):-
     Dado =\= Num,
     N is 1,
     posicionesRepetido(RestoDados,Num,RestoLista).
-
-
 
 unificadorPatrones([],[],[]).
 
@@ -464,12 +462,79 @@ yahtzeelog(0, _, Tablero) :-
     !.
 yahtzeelog(Repetir, Estrategia, Tablero) :-
     lanzamiento(_, [1,1,1,1,1], Dados),
+    write('Dados: '), write(Dados), nl,
     cambio_dados(Dados, Tablero, Estrategia, Patron1),
     lanzamiento(Dados, Patron1, NuevosDados1),
+    write('Dados: '), write(NuevosDados1), nl,
     cambio_dados(NuevosDados1, Tablero, Estrategia, Patron2),
     lanzamiento(NuevosDados1, Patron2, NuevosDados2),
+    write('Dados: '), write(NuevosDados2), nl,
     eleccion_slot(NuevosDados2, Tablero, Estrategia, CategoriaSlot),
     puntaje(NuevosDados2, CategoriaSlot, PuntosCategoriaSeleccionada),
     ajustar_tablero(Tablero, CategoriaSlot, PuntosCategoriaSeleccionada, NuevoTablero),
     NuevoRepetir is Repetir - 1,
     yahtzeelog(NuevoRepetir, Estrategia, NuevoTablero).
+
+% ---------------------------------------
+
+%La diferencia entre test y no test es que no estan las salidas intermedias de antes y ahora solo hay unas salidas al final
+eleccion_slot_test(Dados, Tablero, ia_det, Categoria):- % Devuelvo la categoria que de el mayor puntaje en caso de que no se cumplan las condiciones anteriores
+     map_puntajes(Tablero, Dados, PuntajesCategoria),
+     ordenar_por_puntaje(PuntajesCategoria, [s(Categoria, _) | _]).
+
+eleccion_slot_test(Dados, Tablero, ia_det, Categoria):-
+     map_puntajes(Tablero, Dados, PuntajesCategoria),
+     categorias_seccion_superior(CategoriasSuperior),
+     member(m(X, Categoria), CategoriasSuperior),
+     member(s(Categoria, PuntajeCat), PuntajesCategoria),
+     PuntajeCat >= 3 * X,  % Le doy preferencia a la seccion superior por encima de three_of_a_kind y four_of_a_kind en caso de que hayan 3 del mismo valor
+     \+ member(s(full_house, 25), PuntajesCategoria),
+     \+ member(s(smaill_straight, 30), PuntajesCategoria),
+     \+ member(s(large_straight, 40), PuntajesCategoria),
+     \+ member(s(yahtzee, 50), PuntajesCategoria),
+     !.
+
+yahtzeelog_test(0, _, Tablero, Tablero).
+yahtzeelog_test(Repetir, Estrategia, Tablero, UltimoTablero) :-
+    lanzamiento(_, [1,1,1,1,1], Dados),
+    cambio_dados(Dados, Tablero, Estrategia, Patron1),
+    lanzamiento(Dados, Patron1, NuevosDados1),
+    cambio_dados(NuevosDados1, Tablero, Estrategia, Patron2),
+    lanzamiento(NuevosDados1, Patron2, NuevosDados2),
+    eleccion_slot_test(NuevosDados2, Tablero, Estrategia, CategoriaSlot),
+    puntaje(NuevosDados2, CategoriaSlot, PuntosCategoriaSeleccionada),
+    ajustar_tablero(Tablero, CategoriaSlot, PuntosCategoriaSeleccionada, NuevoTablero),
+    NuevoRepetir is Repetir - 1,
+    yahtzeelog_test(NuevoRepetir, Estrategia, NuevoTablero, UltimoTablero).
+
+suma_desviacion([],_,Suma,Suma).
+suma_desviacion([Puntaje|Puntajes],Media,Suma,SumaDesviacion) :-
+    NuevaSuma is (Suma + ((Puntaje - Media) * (Puntaje - Media))),
+    suma_desviacion(Puntajes,Media,NuevaSuma,SumaDesviacion).
+    
+% Si se quiere, se puede imprimir todos los datos que se quieran evaluar, no solo la media y la desviación, además podría ser el puntaje de alguna categoría en especifico, cuantas veces se obtiene el bonus, el max y min puntos alcanzado, etc.
+test_masivo(_,_,0,PuntajeTotal,Desviacion) :-
+    length(Desviacion, N),
+    Media is PuntajeTotal / N,
+    suma_desviacion(Desviacion,Media,0,SumaDesviacion),
+    Suma is SumaDesviacion / N,
+    DesviacionFinal is sqrt(Suma),
+    write('La media es de '), write(Media),write(' puntos.'), nl,
+    write('La desviacion es de '), write(DesviacionFinal), write(' puntos'),
+    !.
+test_masivo(Estrategia,Seed,Cantidad,PuntajeTotal,Desviacion):-
+    estrategias(Ests),
+    member(Estrategia, Ests),
+    inicial(Tablero),
+    iniciar(Seed),
+    yahtzeelog_test(13,Estrategia,Tablero,UltimoTablero),
+    puntaje_tablero(UltimoTablero, Puntaje),
+    NuevoPuntajeTotal is PuntajeTotal + Puntaje,
+    NuevoSeed is Seed + 1,
+    NuevaCantidad is Cantidad - 1,
+    append([Puntaje],Desviacion,NuevaDesviacion),
+    test_masivo(Estrategia,NuevoSeed,NuevaCantidad,NuevoPuntajeTotal,NuevaDesviacion).
+
+%realiza muchos tests para diferentes seed para Estrategia = [ia_det,ia_prob]
+test_masivo(Estrategia,Cantidad):-
+    test_masivo(Estrategia,1,Cantidad,0,[]).
