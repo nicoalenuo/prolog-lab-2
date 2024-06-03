@@ -244,15 +244,6 @@ eleccion_slot(Dados, Tablero, ia_det, Categoria):- % Devuelvo la categoria que d
      map_puntajes(Tablero, Dados, PuntajesCategoria),
      ordenar_por_puntaje(PuntajesCategoria, [s(Categoria, _) | _]).
 
-% eleccion_slot(Dados, Tablero, ia_prob, Categoria):-
-
-% --------------------------------------------------
-
-cambio_dados(Dados, Tablero, ia_det, Patron) :-
-    tiene_n_del_mismo_tipo(Dados,5,_),
-    member(s(yahtzee,nil),Tablero),
-    Patron = [0,0,0,0,0].
-
 cambio_dados(_, _, humano, Patron)  :-
     elegir_patron(Patron, 5).
 
@@ -274,15 +265,14 @@ cambio_dados(Dados, Tablero, ia_det, Patron) :-
     unificadorPatrones(Patron1,Patron2,Patron).
 
 cambio_dados(Dados, Tablero, ia_det, Patron) :-
-    member(s(large_straight,nil),Tablero),
-    tiene_escalera_grande(Dados),
+    tiene_n_del_mismo_tipo(Dados,5,_),
+    member(s(yahtzee,nil),Tablero),
     Patron = [0,0,0,0,0].
 
 cambio_dados(Dados, Tablero, ia_det, Patron) :-
     member(s(large_straight,nil),Tablero),
-    tiene_escalera_pequenia(Dados),
-    sort_unicos(Dados,ValoresOrdenados),
-    creadorPatronEscalera(Dados,ValoresOrdenados,Patron).
+    tiene_escalera_grande(Dados),
+    Patron = [0,0,0,0,0].
 
 cambio_dados(Dados, Tablero, ia_det, Patron) :-
     member(s(small_straight,nil),Tablero),
@@ -420,6 +410,40 @@ mostrar_tablero([s(Categoria, Puntos) | Resto]) :-
 
 % ------------------------------------------------
 
+% eleccion_slot(Dados, Tablero, ia_prob, Categoria):-
+
+% Se lo llama como patron(5,X). Retorna todas las combinaciones posibles de patrones
+patron(1,[0]).
+patron(1,[1]).
+patron(K,[0|Resto]):-
+    K > 1,
+    N is K - 1,
+    patron(N,Resto).
+patron(K,[1|Resto]):-
+    K > 1,
+    N is K - 1,
+    patron(N,Resto).
+
+mejor_patron_categoria(_,[]).
+mejor_patron_categoria(Dados,s(Categoria, PuntajeCategoria),[Patron|RestoPatrones],MejorValor,MejorPatron) :-
+     valor_esperado_categoria(Dados,Categoria,Patron,ValorEsperado),
+     
+     mejor_patron_categoria(Dados,s(Categoria, PuntajeCategoria),RestoPatrones,MejorValor,MejorPatron).
+
+valor_esperado_categoria(Dados, Categoria, Patron, ValorEsperado) :-
+
+mejor_categoria(_,[]).
+mejor_categoria(Dados,[s(Categoria, PuntajeCategoria) | RestoPuntajesCategoria],MejorValorAnterior,MejorPatronAnterior):-
+     findall(X,patron(5,X),Patrones),
+     mejor_patron_categoria(Dados,s(Categoria, PuntajeCategoria),Patrones,MejorValor,MejorPatron),
+     mejor_categoria(Dados,RestoPuntajesCategoria,MejorValor,MejorPatron).
+
+cambio_dados(Dados, Tablero, ia_prob, Patron) :-
+     map_puntajes(Tablero,Dados,PuntajesCategoria),
+     mejor_categoria(Dados,PuntajesCategoria,0,Patron).
+
+% ------------------------------------------------
+
 % Se llama a yahtzee para jugar con un humano
 yahtzee(humano, Seed):-
      inicial(Tablero), % Genero tablero inicial
@@ -483,11 +507,6 @@ yahtzeelog(Repetir, Estrategia, Tablero) :-
 
 % ---------------------------------------
 
-%La diferencia entre test y no test es que no estan las salidas intermedias de antes y ahora solo hay unas salidas al final
-eleccion_slot_test(Dados, Tablero, ia_det, Categoria):- % Devuelvo la categoria que de el mayor puntaje en caso de que no se cumplan las condiciones anteriores
-     map_puntajes(Tablero, Dados, PuntajesCategoria),
-     ordenar_por_puntaje(PuntajesCategoria, [s(Categoria, _) | _]).
-
 eleccion_slot_test(Dados, Tablero, ia_det, Categoria):-
      map_puntajes(Tablero, Dados, PuntajesCategoria),
      categorias_seccion_superior(CategoriasSuperior),
@@ -499,6 +518,11 @@ eleccion_slot_test(Dados, Tablero, ia_det, Categoria):-
      \+ member(s(large_straight, 40), PuntajesCategoria),
      \+ member(s(yahtzee, 50), PuntajesCategoria),
      !.
+
+%La diferencia entre test y no test es que no estan las salidas intermedias de antes y ahora solo hay unas salidas al final
+eleccion_slot_test(Dados, Tablero, ia_det, Categoria):- % Devuelvo la categoria que de el mayor puntaje en caso de que no se cumplan las condiciones anteriores
+     map_puntajes(Tablero, Dados, PuntajesCategoria),
+     ordenar_por_puntaje(PuntajesCategoria, [s(Categoria, _) | _]).
 
 yahtzeelog_test(0, _, Tablero, Tablero).
 yahtzeelog_test(Repetir, Estrategia, Tablero, UltimoTablero) :-
