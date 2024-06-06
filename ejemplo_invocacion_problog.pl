@@ -31,3 +31,4 @@ lista_valores([X,Y|T],[TermValor|T1]):-
     TermValor =.. [p,Cat,Valor,NumberY],
     lista_valores(T,T1).
 lista_valores([],[]).
+
