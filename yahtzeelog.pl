@@ -548,29 +548,27 @@ test_masivo(Estrategia,Cantidad):-
     test_masivo(Estrategia,1,Cantidad,0,[]).
 
 % ---------------------------
-
 % Verifica si hay alguna categoría sin completar (indicada por `nil`)
 categorias_por_completar([s(_, nil) | _]) :- 
     !.  
 categorias_por_completar([_ | RestoTablero]) :-
     categorias_por_completar(RestoTablero).
 
+esperanza_sin_dados(Tablero, 0):-
+    \+categorias_por_completar(Tablero),
+    !.
 esperanza_sin_dados(Tablero, Esperanza) :-
-    categorias_por_completar(Tablero),
     lista_combinaciones_dados(Combinaciones),
     esperanza_sin_dados_sumatoria(Tablero, Combinaciones, Esperanza).
-esperanza_sin_dados(_, 0).
 
 esperanza_sin_dados_sumatoria(_, [], 0):-
     !.
 esperanza_sin_dados_sumatoria(Tablero, [Combinacion | RestoCombinaciones], Esperanza) :-
-    % P = Probabilidad de pasar de no tener ningun dado a Combinacion, deberia ser una constante, 1/(6^5) %
-    %P = 0.000128600823,
-    P = 1,
+    % P = Probabilidad de pasar de no tener ningun dado a Combinacion, debería ser una constante, 1/(6^5)
+    P is 1/(6^5),
     esperanza_sin_dados_sumatoria(Tablero, RestoCombinaciones, EsperanzaResto),
     esperanza_inicio(Tablero, Combinacion, 2, EsperanzaNueva),
     Esperanza is EsperanzaResto + P * EsperanzaNueva.
-
 
 esperanza_inicio(Tablero, Dados, 0, Maximo):-
     map_puntajes(Tablero, Dados, PuntajesCategoria),
@@ -592,12 +590,17 @@ esperanza_maximo(Tablero, DadosOriginales, N, [Reroll | RestoRerolls], MaximoAct
 esperanza_sumatoria(_, _, _, _, [], 0) :-
     !.
 esperanza_sumatoria(Tablero, DadosOriginales, Reroll, N, [Combinacion | RestoCombinaciones], Esperanza) :-
-    % P = Probabilidad de pasar de DadosOriginales a Combinacion usando Reroll %
-    P = 1, % Valor place holder %
+    % P = Probabilidad de pasar de DadosOriginales a Combinacion usando Reroll
+    P is 0, % Este valor debería ajustarse según el cálculo real de probabilidad
+    (P > 0 ->
     NAux is N - 1,
     esperanza_inicio(Tablero, Combinacion, NAux, EsperanzaNueva),
-    esperanza_sumatoria(Tablero, DadosOriginales, Reroll, RestoCombinaciones, N, EsperanzaSumatoria),
-    Esperanza is EsperanzaSumatoria + EsperanzaNueva * P.
+    esperanza_sumatoria(Tablero, DadosOriginales, Reroll, N, RestoCombinaciones, EsperanzaSumatoria),
+    Esperanza is EsperanzaSumatoria + EsperanzaNueva * P
+    ;    
+    esperanza_sumatoria(Tablero, DadosOriginales, Reroll, N, RestoCombinaciones, EsperanzaSumatoria),
+    Esperanza is EsperanzaSumatoria
+    ).
 
 esperanza_final(_, _, [], Maximo, Maximo):-
     !.
@@ -607,7 +610,6 @@ esperanza_final(Tablero, Dados, [s(Categoria, PuntajeCategoria) | RestoCategoria
     EsperanzaAux is PuntajeCategoria + EsperanzaNueva,
     MaximoNuevo is max(MaximoActual, EsperanzaAux),
     esperanza_final(Tablero, Dados, RestoCategorias, MaximoNuevo, Maximo).
-
 
 :- dynamic lista_rerolls/1.
 :- dynamic lista_combinaciones_dados/1.
@@ -620,8 +622,15 @@ listas_con_elementos(N, Elementos, [X|Xs]) :-
     N1 is N - 1,
     listas_con_elementos(N1, Elementos, Xs).
 
-lista_rerolls(Listas) :-
-    findall(Lista, listas_con_elementos(5, [0, 1], Lista), Listas).
+generar_lista_rerolls :-
+    findall(Lista, listas_con_elementos(5, [0, 1], Lista), Listas),
+    retractall(lista_rerolls(_)),
+    asserta((lista_rerolls(Listas))).
 
-lista_combinaciones_dados(Listas):-
-    findall(Lista, listas_con_elementos(5, [1,2,3,4,5,6], Lista), Listas).
+generar_lista_combinaciones_dados :-
+    findall(Lista, listas_con_elementos(5, [1,2,3,4,5,6], Lista), Listas),
+    retractall(lista_combinaciones_dados(_)),
+    asserta((lista_combinaciones_dados(Listas))).
+
+:- generar_lista_rerolls.
+:- generar_lista_combinaciones_dados.
