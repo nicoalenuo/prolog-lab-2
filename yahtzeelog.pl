@@ -452,10 +452,7 @@ mejor_patron_categoria(Dados,Categoria,[Patron|Patrones],MejorVal,MejorPatron,Ac
     patronCatSup(Dados,Tipo,MejorPatron),
     valor_esperado_categoria(Dados,Tipo,MejorPatron,ValorEsperado),
     Max is Tipo * 5,
-    MejorVal is ValorEsperado / Max);
-
-
-
+    MejorVal is ValorEsperado / Max).
 
 mejor_categoria_aux(Dados,Categoria,Patrones):-
     (
@@ -463,11 +460,13 @@ mejor_categoria_aux(Dados,Categoria,Patrones):-
         member(m(Tipo,Categoria),Lista),Patrones = [[1,1,1,1,1]]
     );
     (
-        Categoria =:= three_of_a_kind,
+        Categoria = three_of_a_kind,
         patron_three(Dados,Patrones)
+    );
+    (
+        writeln('hola')
     ).
-%categorias_seccion_inferior([three_of_a_kind, four_of_a_kind, full_house, small_straight, large_straight , yahtzee, chance]).)
-
+    
 
 
 mejor_categoria(_,[],_,_).
@@ -501,10 +500,11 @@ patronCatSup([Dado|Resto],N,[X|RestoPatron]):-
     X is 1,
     patronCatSup(Resto,N,RestoPatron).
 
-patron_three(Dados,Patron,N):-
+patron_three(Dados,Patron):-
     (
         tiene_n_del_mismo_tipo(Dados,3,Tipo),
-        patronCatSup(Dados,Tipo,Patron)
+        patronCatSup(Dados,Tipo,Patron),
+        !
     );
     (
         tiene_n_del_mismo_tipo(Dados,2,Tipo),
@@ -512,33 +512,32 @@ patron_three(Dados,Patron,N):-
             tiene_n_del_mismo_tipo(Dados,2,Tipo2),
             Tipo \= Tipo2,
             Tipo < Tipo2,
-            patronCatSup(Dados,Tipo2,Patron)
+            patronCatSup(Dados,Tipo2,Patron),
+            !
         );
-        (
-            patronCatSup(Dados,Tipo,Patron)
+        (   
+            tiene_n_del_mismo_tipo(Dados,2,Tipo),
+            patronCatSup(Dados,Tipo,Patron),
+            !
         )
     );
     (
         mayor(Dados,N),
-        patronCatSup(Dados,N,Patron)
+        N\=0,
+        patronCatSup(Dados,N,Patron),
+        !
     ).
+
 mayor([],0).
 mayor([Dado|Dados],N):-
+    mayor(Dados,N1),
     Dado > N1,
-    N is Dado,
-    mayor(Dados,N1).
+    N is Dado.
+
 mayor([Dado|Dados],N):-
-    mayor(Dados,N).
-/*
-patronxnumero([],_,[]).
-patronxnumero([Dado|Resto],N,[X|RestoPatron]):-
-    N =:= Dado,
-    X is 0,
-    patronxnumero(Resto,N,RestoPatron).
-patronxnumero([Dado|Resto],N,[_|RestoPatron]):-
-    N =\= Dado,
-    patronxnumero(Resto,N,RestoPatron).
-*/
+    mayor(Dados,N1),
+    Dado =< N1,
+    N is N1.
 
 cuantos_de_tipo([],_,X,X).
 cuantos_de_tipo([Tipo | RestoDados],Tipo,N,Acum):-
