@@ -4,30 +4,27 @@
 % Y consulto el resultado para obtener 
 % las consultas y su probabilidad
 
-consultar_probabilidades(ListaValores):-
+consultar_probabilidades([Patron1,Patron2,Patron3,Patron4,Patron5],[Dado1,Dado2,Dado3,Dado4,Dado5],ListaValores):-
     % Problog debe estar en el path!
     absolute_file_name(path(problog),Problog,[access(exist),extensions([exe])]),
     % Nombre del modelo, que se supone está en el mismo directorio que el fuente
-    absolute_file_name(modelo_problog,Modelo,[file_type(prolog)]),
+    absolute_file_name(pr,Modelo,[file_type(prolog)]),
     % Invoca a problog con el modelo como argumento, y envía la salida a un pipe
-    process_create(Problog,[Modelo],[stdout(pipe(In))]),
+    process_create(Problog,[Modelo, '-a', Patron1, '-a', Patron2, '-a', Patron3, '-a', Patron4, '-a', Patron5, '-a', Dado1, '-a', Dado2, '-a', Dado3, '-a', Dado4, '-a', Dado5],[stdout(pipe(In))]),
     % Convierte la salida a un string
     read_string(In,_,Result),
     % Divide la salida
-    split_string(Result,"\n\t","\r ",L),
+    
+    split_string(Result,"\n\t","\r  llamada ( ), :",L),
     % Escribo la salida
-    writeln(Result),
     % Quito último elemento de la lista
     append(L1,[_],L),
-    lista_valores(L1,ListaValores).
+    lista_valores(L1,ListaValores),
+    writeln(ListaValores).
+
 
 % Predicado auxiliar para transformar a términos y a números, como se espera
-lista_valores([X,Y|T],[TermValor|T1]):-
-    % Saco los dos puntos del final
-    split_string(X,"",":",[X1|_]),
-    term_string(TermX,X1),
-    TermX =.. [carta,Cat,Valor],
-    number_string(NumberY,Y),
-    TermValor =.. [p,Cat,Valor,NumberY],
+lista_valores([X,Y|T],[M|T1]):-
+    M = s(X,Y),
     lista_valores(T,T1).
 lista_valores([],[]).

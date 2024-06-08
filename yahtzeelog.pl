@@ -461,25 +461,23 @@ valor_esperado_categoria(Dados,Tipo,Patron,ValorEsperado):-
 
 mejor_patron_categoria(_,_,[],X,Y,X,Y).
 mejor_patron_categoria(Dados,Categoria,[Patron|Patrones],MejorVal,MejorPatron,Acum,AcumuladorPatr) :-
-    categorias_seccion_superior(Lista),
+    (categorias_seccion_superior(Lista),
     member(m(Tipo,Categoria),Lista),
-    valor_esperado_categoria(Dados,Tipo,Patron,ValorEsperado),
+    patronCatSup(Dados,Tipo,MejorPatron),
+    valor_esperado_categoria(Dados,Tipo,MejorPatron,ValorEsperado),
     Max is Tipo * 5,
-    ValorRico is ValorEsperado / Max,
-    ( 
-    ValorRico =< Acum,
-    mejor_patron_categoria(Dados,Categoria,Patrones,MejorVal,MejorPatron,Acum,AcumuladorPatr);
-    ValorRico > Acum,
-    mejor_patron_categoria(Dados,Categoria,Patrones,MejorVal,MejorPatron,ValorRico,Patron)
-    ).
+    MejorVal is ValorEsperado / Max);
+
 
 
 
 mejor_categoria_aux(Dados,Categoria,Patrones):-
-    categorias_seccion_superior(Lista),
-    member(m(Tipo,Categoria),Lista),
-    patronxnumero(Dados,Tipo,PatronBase),
-    findall(PatronBase,patron(5,PatronBase),Patrones).
+    (categorias_seccion_superior(Lista),
+    member(m(Tipo,Categoria),Lista));
+    (categorias_seccion_inferior(Lista),
+    ()
+    )
+%categorias_seccion_inferior([three_of_a_kind, four_of_a_kind, full_house, small_straight, large_straight , yahtzee, chance]).)
 
 
 
@@ -504,6 +502,15 @@ cambio_dados(Dados, Tablero, ia_prob, Patron) :-
      mejor_categoria(Dados,PuntajesCategoria,0,Patron).
 
 
+patronCatSup([],_,[]).
+patronCatSup([Dado|Resto],N,[X|RestoPatron]):-
+    N =:= Dado,
+    X is 0,
+    patronCatSup(Resto,N,RestoPatron).
+patronCatSup([Dado|Resto],N,[X|RestoPatron]):-
+    N =\= Dado,
+    X is 1,
+    patronCatSup(Resto,N,RestoPatron).
 
 patronxnumero([],_,[]).
 patronxnumero([Dado|Resto],N,[X|RestoPatron]):-
