@@ -1,5 +1,15 @@
 :- use_module(library(random)).
 :- use_module(library(readutil)).
+:- use_module(library(filesex)).
+
+consultar_probabilidad_unica(Categoria, [D1, D2, D3, D4, D5], [X1, X2, X3, X4, X5], Probabilidad):-
+    absolute_file_name(path(problog),Problog,[access(exist),extensions([exe])]),
+    absolute_file_name(modelo,Modelo,[file_type(prolog)]),
+    process_create(Problog, [Modelo, '-a', Categoria, '-a', D1, '-a', D2,'-a', D3,'-a', D4,'-a', D5, '-a', X1, '-a', X2, '-a', X3, '-a', X4, '-a', X5], [stdout(pipe(In))]),
+    read_string(In, _, Result),
+    split_string(Result,"\n\t","\r ",L),
+    append([_, Y], [_], L),
+    number_string(Probabilidad, Y).
 
 % Setea el estado inicial del generador de números aleatorios
 iniciar(X):- set_random(seed(X)).
@@ -418,6 +428,100 @@ mostrar_tablero([s(Categoria, Puntos) | Resto]) :-
     write(' -'), write(Categoria), write(': '), write(Puntos), write(' puntos.'), nl,
     mostrar_tablero(Resto).
 
+% ------------------------------------------------
+
+% eleccion_slot(Dados, Tablero, ia_prob, Categoria):-
+
+% Se lo llama como patron(5,X). Retorna todas las combinaciones posibles de patrones
+
+patron(1,[0]).
+patron(1,[1]).
+patron(K,[0|Resto]):-
+    K > 1,
+    N is K - 1,
+    patron(N,Resto).
+patron(K,[1|Resto]):-
+    K > 1,
+    N is K - 1,
+    patron(N,Resto).
+
+
+sumador([],_,_,X,X).
+sumador([(Prob,Exit)|RestoProb],Tipo,Base,ValorEsperado,Acumulador):-
+    Cuenta1 is Exit * Tipo,
+    Cuenta2 is Base + Cuenta1,
+    Cuenta3 is Prob * Cuenta2,
+    Acumulador2 is Cuenta3 + Acumulador,
+    sumador(RestoProb,Tipo,Base,ValorEsperado,Acumulador2).
+
+valor_esperado_categoria(Dados,Tipo,Patron,ValorEsperado):-
+    cuantos_de_tipo(Dados,Tipo,Cant,0),
+    findall(Probabilidades,probsCatSuperior(Dados,Patron,1,0,Probabilidades),Prob),
+    Base is Cant * Tipo,
+    sumador(Prob,Tipo,Base,ValorEsperado,0).
+
+
+
+mejor_patron_categoria(_,_,[],X,Y,X,Y).
+mejor_patron_categoria(Dados,Categoria,[Patron|Patrones],MejorVal,MejorPatron,Acum,AcumuladorPatr) :-
+    categorias_seccion_superior(Lista),
+    member(m(Tipo,Categoria),Lista),
+    valor_esperado_categoria(Dados,Tipo,Patron,ValorEsperado),
+    Max is Tipo * 5,
+    ValorRico is ValorEsperado / Max,
+    ( 
+    ValorRico =< Acum,
+    mejor_patron_categoria(Dados,Categoria,Patrones,MejorVal,MejorPatron,Acum,AcumuladorPatr);
+    ValorRico > Acum,
+    mejor_patron_categoria(Dados,Categoria,Patrones,MejorVal,MejorPatron,ValorRico,Patron)
+    ).
+
+
+
+mejor_categoria_aux(Dados,Categoria,Patrones):-
+    categorias_seccion_superior(Lista),
+    member(m(Tipo,Categoria),Lista),
+    patronxnumero(Dados,Tipo,PatronBase),
+    findall(PatronBase,patron(5,PatronBase),Patrones).
+
+
+
+mejor_categoria(_,[],_,_).
+mejor_categoria(Dados,[s(Categoria, _) | RestoPuntajesCategoria],MejorValorAnterior,MejorPatronAnterior):-
+    mejor_categoria_aux(Dados,Categoria,Patrones),
+    mejor_patron_categoria(Dados,Categoria,Patrones,MejorValor,MejorPatron,0,_),
+    MejorValor =< MejorValorAnterior,
+    mejor_categoria(Dados,RestoPuntajesCategoria,MejorValorAnterior,MejorPatronAnterior).
+
+mejor_categoria(Dados,[s(Categoria, _) | RestoPuntajesCategoria],MejorValorAnterior,_):-
+    mejor_categoria_aux(Dados,Categoria,Patrones),
+    mejor_patron_categoria(Dados,Categoria,Patrones,MejorValor,MejorPatron,0,_),
+    MejorValor > MejorValorAnterior,
+    mejor_categoria(Dados,RestoPuntajesCategoria,MejorValor,MejorPatron).
+
+
+
+
+cambio_dados(Dados, Tablero, ia_prob, Patron) :-
+    map_puntajes(Tablero,Dados,PuntajesCategoria),
+    mejor_categoria(Dados,PuntajesCategoria,0,Patron).
+
+patronxnumero([],_,[]).
+patronxnumero([Dado|Resto],N,[X|RestoPatron]):-
+    N =:= Dado,
+    X is 0,
+    patronxnumero(Resto,N,RestoPatron).
+patronxnumero([Dado|Resto],N,[_|RestoPatron]):-
+    N =\= Dado,
+    patronxnumero(Resto,N,RestoPatron).
+
+cuantos_de_tipo([],_,X,X).
+cuantos_de_tipo([Tipo | RestoDados],Tipo,N,Acum):-
+    Acum2 is Acum + 1,
+    cuantos_de_tipo(RestoDados,Tipo,N,Acum2).
+cuantos_de_tipo([Dado | RestoDados],Tipo,N,Acum):-
+    Dado =\= Tipo,
+    cuantos_de_tipo(RestoDados,Tipo,N,Acum).
 % ------------------------------------------------
 
 % Se llama a yahtzee para jugar con un humano
