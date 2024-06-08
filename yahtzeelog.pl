@@ -429,20 +429,6 @@ mostrar_tablero([s(Categoria, Puntos) | Resto]) :-
 
 % eleccion_slot(Dados, Tablero, ia_prob, Categoria):-
 
-% Se lo llama como patron(5,X). Retorna todas las combinaciones posibles de patrones
-
-patron(1,[0]).
-patron(1,[1]).
-patron(K,[0|Resto]):-
-    K > 1,
-    N is K - 1,
-    patron(N,Resto).
-patron(K,[1|Resto]):-
-    K > 1,
-    N is K - 1,
-    patron(N,Resto).
-
-
 sumador([],_,_,X,X).
 sumador([(Prob,Exit)|RestoProb],Tipo,Base,ValorEsperado,Acumulador):-
     Cuenta1 is Exit * Tipo,
@@ -472,11 +458,14 @@ mejor_patron_categoria(Dados,Categoria,[Patron|Patrones],MejorVal,MejorPatron,Ac
 
 
 mejor_categoria_aux(Dados,Categoria,Patrones):-
-    (categorias_seccion_superior(Lista),
-    member(m(Tipo,Categoria),Lista));
-    (categorias_seccion_inferior(Lista),
-    ()
-    )
+    (
+        categorias_seccion_superior(Lista),
+        member(m(Tipo,Categoria),Lista),Patrones = [[1,1,1,1,1]]
+    );
+    (
+        Categoria =:= three_of_a_kind,
+        patron_three(Dados,Patrones)
+    ).
 %categorias_seccion_inferior([three_of_a_kind, four_of_a_kind, full_house, small_straight, large_straight , yahtzee, chance]).)
 
 
@@ -512,6 +501,35 @@ patronCatSup([Dado|Resto],N,[X|RestoPatron]):-
     X is 1,
     patronCatSup(Resto,N,RestoPatron).
 
+patron_three(Dados,Patron,N):-
+    (
+        tiene_n_del_mismo_tipo(Dados,3,Tipo),
+        patronCatSup(Dados,Tipo,Patron)
+    );
+    (
+        tiene_n_del_mismo_tipo(Dados,2,Tipo),
+        (
+            tiene_n_del_mismo_tipo(Dados,2,Tipo2),
+            Tipo \= Tipo2,
+            Tipo < Tipo2,
+            patronCatSup(Dados,Tipo2,Patron)
+        );
+        (
+            patronCatSup(Dados,Tipo,Patron)
+        )
+    );
+    (
+        mayor(Dados,N),
+        patronCatSup(Dados,N,Patron)
+    ).
+mayor([],0).
+mayor([Dado|Dados],N):-
+    Dado > N1,
+    N is Dado,
+    mayor(Dados,N1).
+mayor([Dado|Dados],N):-
+    mayor(Dados,N).
+/*
 patronxnumero([],_,[]).
 patronxnumero([Dado|Resto],N,[X|RestoPatron]):-
     N =:= Dado,
@@ -520,6 +538,7 @@ patronxnumero([Dado|Resto],N,[X|RestoPatron]):-
 patronxnumero([Dado|Resto],N,[_|RestoPatron]):-
     N =\= Dado,
     patronxnumero(Resto,N,RestoPatron).
+*/
 
 cuantos_de_tipo([],_,X,X).
 cuantos_de_tipo([Tipo | RestoDados],Tipo,N,Acum):-
