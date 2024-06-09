@@ -451,13 +451,13 @@ patron_por_numero([Dado|Dados],Numero,[1|Patron]):-
     Dado \= Numero,
     patron_por_numero(Dados,Numero,Patron).
 
-    patron_generales(Dados, MinimoEsperado, Patrones) :-
-        maximo_dado_repetido(Dados, Maximo, Cantidad),
-        (MinimoEsperado < Cantidad ->
-            findall(PatronesBase, buscoPatronesConMinimo(Dados, MinimoEsperado, Maximo, PatronesBase), Patrones),!
-        ;
-            findall(PatronesBase, buscoPatronesConMinimo(Dados, Cantidad, Maximo, PatronesBase), Patrones),!
-        ).
+patron_general(Dados, MinimoEsperado, Patrones) :-
+    maximo_dado_repetido(Dados, Maximo, Cantidad),
+    (MinimoEsperado < Cantidad ->
+        findall(PatronesBase, buscoPatronesConMinimo(Dados, MinimoEsperado, Maximo, PatronesBase), Patrones),!
+    ;
+        findall(PatronesBase, buscoPatronesConMinimo(Dados, Cantidad, Maximo, PatronesBase), Patrones),!
+    ).
     
 
 buscoPatronesConMinimo([NumeroObj|Dados],MinimoEsperado,NumeroObj,[0|Patrones]):-
@@ -507,8 +507,9 @@ mejor_grupo([],Maximo,Cantidad,Cantidad,Maximo).
 %dependiendo de la categoria y los dados, obtiene la lista de los "mejores" patrones
 %por el momento, obtiene toda la lista de patrones posibles
 obtener_patrones(Dados,Categoria,Patrones):-
-    (categorias_seccion_superior(Lista), (m(Tipo,Categoria),Lista), patron_por_numero(Dados,Tipo,Patrones),!); %Patrones para las categorias superiores
-    (Categoria = three_of_a_kind, patron_three(Dados,Patrones));
+    (categorias_seccion_superior(Lista), member(m(Tipo,Categoria),Lista), patron_por_numero(Dados,Tipo,Patrones),!); %Patrones para las categorias superiores
+    (Categoria = three_of_a_kind, patron_general(Dados,3,Patrones));
+    (Categoria = four_of_a_kind, patron_general(Dados,4,Patrones));
 
 
 %sabiendo los dados, la categoría y la lista de patrones, retorna la suma de las probabilidades de los patrones y el mejor patron de dicha lista
