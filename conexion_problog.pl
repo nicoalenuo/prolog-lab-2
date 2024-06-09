@@ -1,6 +1,6 @@
 :- use_module(library(filesex)).
 :- use_module(library(persistency)).
-
+:- dynamic prob/2.
 consultar_probabilidades(Modelo, Probabilidad):-
     absolute_file_name(path(problog), Problog, [access(exist), extensions([exe])]),
     process_create(Problog, [Modelo], [stdout(pipe(In))]),
@@ -33,6 +33,11 @@ enviar_query(Categoria, Stream):-
     writeln(Stream, ').').
 
 probabilidad(Categoria, Patron, Dados, Probabilidad):-
+    %(
+    %Patron = [1,1,1,1,1],
+    %prob(Categoria,Probabilidad),
+    %!
+    %);
     conseguir_evidencias(Patron, Dados, 1, Evidencias),
     absolute_file_name(modelo, Modelo, [file_type(prolog)]),
     tmp_file_stream(text, TmpFile, Stream),
@@ -43,3 +48,7 @@ probabilidad(Categoria, Patron, Dados, Probabilidad):-
     enviar_query(Categoria, Stream),
     close(Stream),
     consultar_probabilidades(TmpFile, Probabilidad).
+    %(
+    %Patron = [1,1,1,1,1] ->
+    %asserta(prob(Categoria,Probabilidad))
+    %).
