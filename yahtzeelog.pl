@@ -469,21 +469,6 @@ eleccion_slot(Dados, Tablero, ia_prob, Categoria):-
 
 lista_de_listas(Lista1,[Lista1|[]]).
 
-%por ahora solo obtiene el mejor patron de ia_det, para luego comparar usando problog entre las otras categorias
-% eleccion_slot(Dados, Tablero, ia_prob, Categoria):-
-
-% Se lo llama como patron(5,X). Retorna todas las combinaciones posibles de patrones
-patron(1,[0]).
-patron(1,[1]).
-patron(K,[0|Resto]):-
-    K > 1,
-    N is K - 1,
-    patron(N,Resto).
-patron(K,[1|Resto]):-
-    K > 1,
-    N is K - 1,
-    patron(N,Resto).
-    
 patron_por_numero([],_,[]).
 patron_por_numero([Numero|Dados],Numero,[0|Patron]):-
     patron_por_numero(Dados,Numero,Patron).    
@@ -547,11 +532,11 @@ mejor_grupo([],Maximo,Cantidad,Cantidad,Maximo).
 %dependiendo de la categoria y los dados, obtiene la lista de los "mejores" patrones
 %por el momento, obtiene toda la lista de patrones posibles
 obtener_patrones(Dados,Categoria,Patrones):-
-     cambio_dados(Dados,[s(Categoria,nil)],ia_det,Patron),
-     lista_de_listas(Patron,Patrones).
+    % cambio_dados(Dados,[s(Categoria,nil)],ia_det,Patron),
+    % lista_de_listas(Patron,Patrones).
     (categorias_seccion_superior(Lista), member(m(Tipo,Categoria),Lista), patron_por_numero(Dados,Tipo,Patrones),!); %Patrones para las categorias superiores
     (Categoria = three_of_a_kind, patron_general(Dados,3,Patrones));
-    (Categoria = four_of_a_kind, patron_general(Dados,4,Patrones));
+    (Categoria = four_of_a_kind, patron_general(Dados,4,Patrones)).
 
 
 %sabiendo los dados, la categoría y la lista de patrones, la mejor probabilidad y el mejor patron de dicha lista
