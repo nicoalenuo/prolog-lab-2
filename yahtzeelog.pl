@@ -1,6 +1,7 @@
 :- use_module(library(random)).
 :- use_module(library(readutil)).
 :- use_module(library(filesex)).
+:- consult("conexion_problog.pl").
 
 consultar_probabilidad_unica(Categoria, [D1, D2, D3, D4, D5], [X1, X2, X3, X4, X5], Probabilidad):-
     absolute_file_name(path(problog),Problog,[access(exist),extensions([exe])]),
@@ -226,7 +227,7 @@ eleccion_slot(Dados, Tablero, humano, Categoria) :-
 
     flush_output(current_output), %falta ignorar el salto de linea (actualmente hay que apretar dos veces enter)
     read_line_to_string(user_input, Entrada),
-    
+
     length(PuntajesCategoria, CantDisponibles),
     (
         atom_number(Entrada, NroElegido),
@@ -254,8 +255,6 @@ eleccion_slot(Dados, Tablero, ia_det, Categoria):- % Devuelvo la categoria que d
      map_puntajes(Tablero, Dados, PuntajesCategoria),
      ordenar_por_puntaje(PuntajesCategoria, [s(Categoria, _) | _]).
 
-% eleccion_slot(Dados, Tablero, ia_prob, Categoria):-
-
 % ---------------------------------------------------
 
 cambio_dados(Dados, Tablero, ia_det, Patron) :-
@@ -272,7 +271,8 @@ cambio_dados(Dados, Tablero, ia_det, Patron) :-
     member(s(full_house,nil),Tablero),
     posicionesRepetido(Dados,Tipo,Patron1),
     posicionesRepetido(Dados,Tipo2,Patron2),
-    unificadorPatrones(Patron1,Patron2,Patron).
+    unificadorPatrones(Patron1,Patron2,Patron),
+    !.
 
 cambio_dados(Dados, Tablero, ia_det, Patron) :-
     tiene_n_del_mismo_tipo(Dados,2,Tipo),
@@ -281,95 +281,116 @@ cambio_dados(Dados, Tablero, ia_det, Patron) :-
     member(s(full_house,nil),Tablero),
     posicionesRepetido(Dados,Tipo,Patron1),
     posicionesRepetido(Dados,Tipo2,Patron2),
-    unificadorPatrones(Patron1,Patron2,Patron).
+    unificadorPatrones(Patron1,Patron2,Patron),
+    !.
 
 cambio_dados(Dados, Tablero, ia_det, Patron) :-
     member(s(large_straight,nil),Tablero),
     tiene_escalera_grande(Dados),
-    Patron = [0,0,0,0,0].
+    Patron = [0,0,0,0,0],
+    !.
 
 cambio_dados(Dados, Tablero, ia_det, Patron) :-
     member(s(large_straight,nil),Tablero),
     tiene_escalera_pequenia(Dados),
     sort_unicos(Dados,ValoresOrdenados),
-    creadorPatronEscalera(Dados,ValoresOrdenados,Patron).
+    creadorPatronEscalera(Dados,ValoresOrdenados,Patron),
+    !.
 
 cambio_dados(Dados, Tablero, ia_det, Patron) :-
     member(s(small_straight,nil),Tablero),
     tiene_escalera_pequenia(Dados),
     sort_unicos(Dados,ValoresOrdenados),
-    creadorPatronEscalera(Dados,ValoresOrdenados,Patron).
+    creadorPatronEscalera(Dados,ValoresOrdenados,Patron),
+    !.
 
 cambio_dados(Dados, Tablero, ia_det, Patron) :-
     member(s(small_straight,nil),Tablero),
     tiene_semi_escalera_pequenia(Dados),
     member(Sublista,[[3,4,5],[1,2,3],[2,3,4],[4,5,6]]),
     sublist(Sublista, Dados),
-    creadorPatronEscalera(Dados,Sublista,Patron).
+    creadorPatronEscalera(Dados,Sublista,Patron),
+    !.
 
 cambio_dados(Dados, Tablero, ia_det, Patron) :-
     tiene_n_del_mismo_tipo(Dados,5,Tipo),
     categorias_seccion_superior(Lista),
     member(m(Tipo,Cat),Lista),
     member(s(Cat,nil),Tablero),
-    posicionesRepetido(Dados,Tipo,Patron).
+    posicionesRepetido(Dados,Tipo,Patron),
+    !.
 
 cambio_dados(Dados, Tablero, ia_det, Patron) :-
     tiene_n_del_mismo_tipo(Dados,4,Tipo),
     categorias_seccion_superior(Lista),
     member(m(Tipo,Cat),Lista),
     member(s(Cat,nil),Tablero),
-    posicionesRepetido(Dados,1,Patron).
+    posicionesRepetido(Dados,1,Patron),
+    !.
 
 cambio_dados(Dados, Tablero, ia_det, Patron) :-
     tiene_n_del_mismo_tipo(Dados,3,Tipo),
     categorias_seccion_superior(Lista),
     member(m(Tipo,Cat),Lista),
     member(s(Cat,nil),Tablero),
-    posicionesRepetido(Dados,Tipo,Patron).
+    posicionesRepetido(Dados,Tipo,Patron),
+    !.
 
 cambio_dados(Dados, Tablero, ia_det, Patron) :-
     tiene_n_del_mismo_tipo(Dados,2,Tipo),
     categorias_seccion_superior(Lista),
     member(m(Tipo,Cat),Lista),
     member(s(Cat,nil),Tablero),
-    posicionesRepetido(Dados,Tipo,Patron).
-
+    posicionesRepetido(Dados,Tipo,Patron),
+    !.
+    
+cambio_dados(Dados, Tablero, ia_det, Patron) :-
+    tiene_n_del_mismo_tipo(Dados,2,Tipo),
+    member(s(full_house,nil),Tablero),
+    posicionesRepetido(Dados,Tipo,Patron),
+    !.
 
 cambio_dados(Dados, Tablero, ia_det, Patron) :-
     tiene_n_del_mismo_tipo(Dados,5,_),
     member(s(four_of_a_kind,nil),Tablero),
-    Patron = [0,0,0,0,0].
+    Patron = [0,0,0,0,0],
+    !.
 
 cambio_dados(Dados, Tablero, ia_det, Patron) :-
     tiene_n_del_mismo_tipo(Dados,4,Tipo),
     member(s(four_of_a_kind,nil),Tablero),
-    posicionesRepetido(Dados,Tipo,Patron).
+    posicionesRepetido(Dados,Tipo,Patron),
+    !.
 
 cambio_dados(Dados, Tablero, ia_det, Patron) :-
     tiene_n_del_mismo_tipo(Dados,3,Tipo),
     member(s(four_of_a_kind,nil),Tablero),
-    posicionesRepetido(Dados,Tipo,Patron).
+    posicionesRepetido(Dados,Tipo,Patron),
+    !.
 
 cambio_dados(Dados, Tablero, ia_det, Patron) :-
     tiene_n_del_mismo_tipo(Dados,2,Tipo),
     member(s(four_of_a_kind,nil),Tablero),
-    posicionesRepetido(Dados,Tipo,Patron).
+    posicionesRepetido(Dados,Tipo,Patron),
+    !.
 
 cambio_dados(Dados, Tablero, ia_det, Patron) :-
     tiene_n_del_mismo_tipo(Dados,3,Tipo),
     member(s(four_of_a_kind,nil),Tablero),
-    posicionesRepetido(Dados,Tipo,Patron).
+    posicionesRepetido(Dados,Tipo,Patron),
+    !.
 
 cambio_dados(Dados, Tablero, ia_det, Patron) :-
     tiene_n_del_mismo_tipo(Dados,3,Tipo),
     member(s(three_of_a_kind,nil),Tablero),
-    posicionesRepetido(Dados,Tipo,Patron).
+    posicionesRepetido(Dados,Tipo,Patron),
+    !.
 
 cambio_dados(Dados, Tablero, ia_det, Patron) :-
     tiene_n_del_mismo_tipo(Dados,2,Tipo),
     member(s(three_of_a_kind,nil),Tablero),
-    posicionesRepetido(Dados,Tipo,Patron).
+    posicionesRepetido(Dados,Tipo,Patron),
+    !.
 
 cambio_dados(_, _, ia_det, [1,1,1,1,1]).
 
@@ -430,6 +451,25 @@ mostrar_tablero([s(Categoria, Puntos) | Resto]) :-
 
 % ------------------------------------------------
 
+eleccion_slot_prob(_,[],MejorProb,CategoriaFinal,CategoriaFinal).
+eleccion_slot_prob(Dados,[Categoria|RestoCategoria],MejorProb,MejorCat,CategoriaFinal):-
+     probabilidad(Categoria,[0,0,0,0,0],Dados,Prob), %funcion implementada en problog
+     (
+     Prob =< MejorProb,
+     eleccion_slot_prob(Dados,RestoCategoria,MejorProb,MejorCat,CategoriaFinal);
+     Prob > MejorProb,
+     eleccion_slot_prob(Dados,RestoCategoria,Prob,Categoria,CategoriaFinal)
+     ).
+
+eleccion_slot(Dados, Tablero, ia_prob, Categoria):-
+     map_puntajes(Tablero, Dados, PuntajesCategoria),
+     mostrar_slots_disponibles(PuntajesCategoria, 1), nl,
+     obtener_categorias_disponibles(Tablero,Categorias),
+     eleccion_slot_prob(Dados,Categorias,0,MejorCat,Categoria).
+
+lista_de_listas(Lista1,[Lista1|[]]).
+
+%por ahora solo obtiene el mejor patron de ia_det, para luego comparar usando problog entre las otras categorias
 % eleccion_slot(Dados, Tablero, ia_prob, Categoria):-
 
 % Se lo llama como patron(5,X). Retorna todas las combinaciones posibles de patrones
@@ -507,15 +547,17 @@ mejor_grupo([],Maximo,Cantidad,Cantidad,Maximo).
 %dependiendo de la categoria y los dados, obtiene la lista de los "mejores" patrones
 %por el momento, obtiene toda la lista de patrones posibles
 obtener_patrones(Dados,Categoria,Patrones):-
+     cambio_dados(Dados,[s(Categoria,nil)],ia_det,Patron),
+     lista_de_listas(Patron,Patrones).
     (categorias_seccion_superior(Lista), member(m(Tipo,Categoria),Lista), patron_por_numero(Dados,Tipo,Patrones),!); %Patrones para las categorias superiores
     (Categoria = three_of_a_kind, patron_general(Dados,3,Patrones));
     (Categoria = four_of_a_kind, patron_general(Dados,4,Patrones));
 
 
-%sabiendo los dados, la categoría y la lista de patrones, retorna la suma de las probabilidades de los patrones y el mejor patron de dicha lista
+%sabiendo los dados, la categoría y la lista de patrones, la mejor probabilidad y el mejor patron de dicha lista
 acumular_probabilidad_categoria(_,_,[],ProbFinal,ProbFinal,PatronFinal,PatronFinal).
 acumular_probabilidad_categoria(Dados,Categoria,[Patron|RestoPatrones],MejorProb,ProbFinal,MejorPatron,PatronFinal):-
-     consultar_probabilidad_unica(Categoria,Dados,Patron,Prob), %funcion implementada en problog
+     probabilidad(Categoria,Patron,Dados,Prob), %funcion implementada en problog
      (
      Prob =< MejorProb,
      acumular_probabilidad_categoria(Dados,Categoria,RestoPatrones,MejorProb,ProbFinal,MejorPatron,PatronFinal);
@@ -543,14 +585,13 @@ mejor_prob_categoria(Dados,Categoria,Patrones,MejorProb,MejorPatron,ProbAnterior
 mejor_categoria(_,[],X,Y,X,Y).
 mejor_categoria(Dados,[Categoria|RestoCategoria],MejorProbAnterior,MejorPatronAnterior,ProbFinal,PatronFinal):-  %MejorPatron no se está cargando pero MejorProb si? XD
     obtener_patrones(Dados,Categoria,Patrones),
-    mejor_prob_categoria(Dados,Categoria,Patrones,MejorProb,_,MejorProbAnterior,MejorPatronAnterior),
-    MejorProb =< MejorProbAnterior,
-    mejor_categoria(Dados,RestoCategoria,MejorProbAnterior,MejorPatronAnterior,ProbFinal,PatronFinal).
-mejor_categoria(Dados,[Categoria|RestoCategoria],MejorProbAnterior,MejorPatronAnterior,ProbFinal,PatronFinal):-
-    obtener_patrones(Dados,Categoria,Patrones),
     mejor_prob_categoria(Dados,Categoria,Patrones,MejorProb,MejorPatron,MejorProbAnterior,MejorPatronAnterior),
+    (
+    MejorProb =< MejorProbAnterior,
+    mejor_categoria(Dados,RestoCategoria,MejorProbAnterior,MejorPatronAnterior,ProbFinal,PatronFinal);
     MejorProb > MejorProbAnterior,
-    mejor_categoria(Dados,RestoCategoria,MejorProb,MejorPatron,ProbFinal,PatronFinal).
+    mejor_categoria(Dados,RestoCategoria,MejorProb,MejorPatron,ProbFinal,PatronFinal)
+    ).
 
 obtener_categorias_disponibles(Tablero,Categorias):-
      findall(Categoria, member(s(Categoria,nil),Tablero),Categorias).
@@ -660,7 +701,7 @@ suma_desviacion([],_,Suma,Suma).
 suma_desviacion([Puntaje|Puntajes],Media,Suma,SumaDesviacion) :-
     NuevaSuma is (Suma + ((Puntaje - Media) * (Puntaje - Media))),
     suma_desviacion(Puntajes,Media,NuevaSuma,SumaDesviacion).
-    
+
 % Si se quiere, se puede imprimir todos los datos que se quieran evaluar, no solo la media y la desviación, además podría ser el puntaje de alguna categoría en especifico, cuantas veces se obtiene el bonus, el max y min puntos alcanzado, etc.
 test_masivo(_,_,0,PuntajeTotal,Desviacion) :-
     length(Desviacion, N),
@@ -689,89 +730,3 @@ test_masivo(Estrategia,Cantidad):-
     test_masivo(Estrategia,1,Cantidad,0,[]).
 
 % ---------------------------
-% Verifica si hay alguna categoría sin completar (indicada por `nil`)
-categorias_por_completar([s(_, nil) | _]) :- 
-    !.  
-categorias_por_completar([_ | RestoTablero]) :-
-    categorias_por_completar(RestoTablero).
-
-esperanza_sin_dados(Tablero, 0):-
-    \+categorias_por_completar(Tablero),
-    !.
-esperanza_sin_dados(Tablero, Esperanza) :-
-    lista_combinaciones_dados(Combinaciones),
-    esperanza_sin_dados_sumatoria(Tablero, Combinaciones, Esperanza).
-
-esperanza_sin_dados_sumatoria(_, [], 0):-
-    !.
-esperanza_sin_dados_sumatoria(Tablero, [Combinacion | RestoCombinaciones], Esperanza) :-
-    % P = Probabilidad de pasar de no tener ningun dado a Combinacion, debería ser una constante, 1/(6^5)
-    P is 1/(6^5),
-    esperanza_sin_dados_sumatoria(Tablero, RestoCombinaciones, EsperanzaResto),
-    esperanza_inicio(Tablero, Combinacion, 2, EsperanzaNueva),
-    Esperanza is EsperanzaResto + P * EsperanzaNueva.
-
-esperanza_inicio(Tablero, Dados, 0, Maximo):-
-    map_puntajes(Tablero, Dados, PuntajesCategoria),
-    esperanza_final(Tablero, Dados, PuntajesCategoria, 0, Maximo),
-    !.
-
-esperanza_inicio(Tablero, Dados, N, Maximo):-
-    lista_rerolls(Rerolls),
-    esperanza_maximo(Tablero, Dados, N, Rerolls, 0, Maximo).
-
-esperanza_maximo(_, _, _, [], Maximo, Maximo):-
-    !.
-esperanza_maximo(Tablero, DadosOriginales, N, [Reroll | RestoRerolls], MaximoActual, Maximo) :-
-    lista_combinaciones_dados(Combinaciones),
-    esperanza_sumatoria(Tablero, DadosOriginales, Reroll, N, Combinaciones, Esperanza),
-    MaximoNuevo is max(MaximoActual, Esperanza),
-    esperanza_maximo(Tablero, DadosOriginales, N, RestoRerolls, MaximoNuevo, Maximo).
-
-esperanza_sumatoria(_, _, _, _, [], 0) :-
-    !.
-esperanza_sumatoria(Tablero, DadosOriginales, Reroll, N, [Combinacion | RestoCombinaciones], Esperanza) :-
-    % P = Probabilidad de pasar de DadosOriginales a Combinacion usando Reroll
-    P is 0, % Este valor debería ajustarse según el cálculo real de probabilidad
-    (P > 0 ->
-    NAux is N - 1,
-    esperanza_inicio(Tablero, Combinacion, NAux, EsperanzaNueva),
-    esperanza_sumatoria(Tablero, DadosOriginales, Reroll, N, RestoCombinaciones, EsperanzaSumatoria),
-    Esperanza is EsperanzaSumatoria + EsperanzaNueva * P
-    ;    
-    esperanza_sumatoria(Tablero, DadosOriginales, Reroll, N, RestoCombinaciones, EsperanzaSumatoria),
-    Esperanza is EsperanzaSumatoria
-    ).
-
-esperanza_final(_, _, [], Maximo, Maximo):-
-    !.
-esperanza_final(Tablero, Dados, [s(Categoria, PuntajeCategoria) | RestoCategorias], MaximoActual, Maximo):-
-    ajustar_tablero(Tablero, Categoria, PuntajeCategoria, TableroNuevo),
-    esperanza_sin_dados(TableroNuevo, EsperanzaNueva),
-    EsperanzaAux is PuntajeCategoria + EsperanzaNueva,
-    MaximoNuevo is max(MaximoActual, EsperanzaAux),
-    esperanza_final(Tablero, Dados, RestoCategorias, MaximoNuevo, Maximo).
-
-:- dynamic lista_rerolls/1.
-:- dynamic lista_combinaciones_dados/1.
-
-% Predicado para generar todas las listas de longitud N con elementos de un conjunto dado
-listas_con_elementos(0, _, []).
-listas_con_elementos(N, Elementos, [X|Xs]) :-
-    N > 0,
-    member(X, Elementos),
-    N1 is N - 1,
-    listas_con_elementos(N1, Elementos, Xs).
-
-generar_lista_rerolls :-
-    findall(Lista, listas_con_elementos(5, [0, 1], Lista), Listas),
-    retractall(lista_rerolls(_)),
-    asserta((lista_rerolls(Listas))).
-
-generar_lista_combinaciones_dados :-
-    findall(Lista, listas_con_elementos(5, [1,2,3,4,5,6], Lista), Listas),
-    retractall(lista_combinaciones_dados(_)),
-    asserta((lista_combinaciones_dados(Listas))).
-
-:- generar_lista_rerolls.
-:- generar_lista_combinaciones_dados.
