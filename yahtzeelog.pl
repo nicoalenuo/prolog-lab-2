@@ -444,10 +444,72 @@ patron(K,[1|Resto]):-
     N is K - 1,
     patron(N,Resto).
     
+patron_por_numero([],_,[]).
+patron_por_numero([Numero|Dados],Numero,[0|Patron]):-
+    patron_por_numero(Dados,Numero,Patron).    
+patron_por_numero([Dado|Dados],Numero,[1|Patron]):-
+    Dado \= Numero,
+    patron_por_numero(Dados,Numero,Patron).
+
+    patron_generales(Dados, MinimoEsperado, Patrones) :-
+        maximo_dado_repetido(Dados, Maximo, Cantidad),
+        (MinimoEsperado < Cantidad ->
+            findall(PatronesBase, buscoPatronesConMinimo(Dados, MinimoEsperado, Maximo, PatronesBase), Patrones),!
+        ;
+            findall(PatronesBase, buscoPatronesConMinimo(Dados, Cantidad, Maximo, PatronesBase), Patrones),!
+        ).
+    
+
+buscoPatronesConMinimo([NumeroObj|Dados],MinimoEsperado,NumeroObj,[0|Patrones]):-
+    MinimoEsperado > 0,
+    NuevoMin is MinimoEsperado - 1,
+    buscoPatronesConMinimo(Dados,NuevoMin,NumeroObj,Patrones).
+buscoPatronesConMinimo([NumeroObj|Dados],0,NumeroObj,[0|Patrones]):-
+    buscoPatronesConMinimo(Dados,0,NumeroObj,Patrones).
+buscoPatronesConMinimo([NumeroObj|Dados],0,NumeroObj,[1|Patrones]):-
+    buscoPatronesConMinimo(Dados,0,NumeroObj,Patrones).
+buscoPatronesConMinimo([Dado|Dados],MinimoEsperado,NumeroObj,[1|Patrones]):-
+    Dado \= NumeroObj,
+    buscoPatronesConMinimo(Dados,MinimoEsperado,NumeroObj,Patrones).
+buscoPatronesConMinimo([Dado|Dados],MinimoEsperado,NumeroObj,[0|Patrones]):-
+    Dado \= NumeroObj,
+    buscoPatronesConMinimo(Dados,MinimoEsperado,NumeroObj,Patrones).
+buscoPatronesConMinimo([],_,_,[]).
+
+maximo_dado_repetido(Dados,Maximo,Cantidad):-
+    sort_unicos(Dados,Res),
+    cant_por_grupo(Dados,Res,Lista),
+    mejor_grupo(Lista,Maximo,Cantidad,0,0).
+
+cant_por_grupo(Dados,[Res|Resto],[(Res,Count)|Lista]):-
+    cant_por_numero(Dados,Res,Count),  
+    %ACA SE PODRIA OPTIMIZAR UN POCO SI SACAMOS LOS DADOS QUE ACABAMOS DE CONTAR, NO TIENE SENTIDO DEJARLOS PORQUE YA CONTASMOS ESOS DADOS, AL SACARLOS, PARA LA SIGUIENTE ITERACION TENDRIAMOS MENOS NUMEROS
+    cant_por_grupo(Dados,Resto,Lista).
+cant_por_grupo(_,[],[]).
+
+cant_por_numero([NumObj|Dados],NumObj,Conteo):-
+    cant_por_numero(Dados,NumObj,ConteoAux),
+    Conteo is ConteoAux + 1.
+cant_por_numero([Dado|Dados],NumObj,Conteo):-
+    Dado \= NumObj,
+    cant_por_numero(Dados,NumObj,Conteo).
+cant_por_numero([],_,0).
+
+mejor_grupo([(Numero,Cant)|RestoLista],Maximo,Cantidad,AuxCant,AuxMax):-
+    (Cant > AuxCant,mejor_grupo(RestoLista,Maximo,Cantidad,Cant,Numero),!);
+    (Cant = AuxCant, Numero > AuxMax,mejor_grupo(RestoLista,Maximo,Cantidad,Cant,Numero),!).
+mejor_grupo([(Numero,Cant)|RestoLista],Maximo,Cantidad,AuxCant,AuxMax):-
+    (Cant < AuxCant,mejor_grupo(RestoLista,Maximo,Cantidad,AuxCant,AuxMax),!);
+    (Cant = AuxCant, Numero < AuxMax,mejor_grupo(RestoLista,Maximo,Cantidad,AuxCant,AuxMax),!).
+mejor_grupo([],Maximo,Cantidad,Cantidad,Maximo).
+
+
 %dependiendo de la categoria y los dados, obtiene la lista de los "mejores" patrones
 %por el momento, obtiene toda la lista de patrones posibles
 obtener_patrones(Dados,Categoria,Patrones):-
-     findall(Patron, patron(5, Patron), Patrones). %en vez de obtener todos los patrones posibles, deberíamos de optimizar para mejorar el tiempo
+    (categorias_seccion_superior(Lista), (m(Tipo,Categoria),Lista), patron_por_numero(Dados,Tipo,Patrones),!); %Patrones para las categorias superiores
+    (Categoria = three_of_a_kind, patron_three(Dados,Patrones));
+
 
 %sabiendo los dados, la categoría y la lista de patrones, retorna la suma de las probabilidades de los patrones y el mejor patron de dicha lista
 acumular_probabilidad_categoria(_,_,[],ProbFinal,ProbFinal,PatronFinal,PatronFinal).
