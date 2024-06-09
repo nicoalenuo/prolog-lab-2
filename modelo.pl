@@ -85,5 +85,3 @@ large_straight:-
 
 yahtzee:-
     dado1(C1), dado2(C1), dado3(C1), dado4(C1), dado5(C1).
-
-query(three_of_a_kind).
