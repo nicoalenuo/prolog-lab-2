@@ -477,12 +477,10 @@ patron_por_numero([Dado|Dados],Numero,[1|Patron]):-
     patron_por_numero(Dados,Numero,Patron).
 
 patron_general(Dados, MinimoEsperado, Patrones) :-
-    writeln(MinimoEsperado),
     maximo_dado_repetido(Dados, Maximo, Cantidad),
-    (MinimoEsperado < Cantidad ->
-        findall(PatronesBase, buscoPatronesConMinimo(Dados, MinimoEsperado, Maximo, PatronesBase), Patrones),!
+    (MinimoEsperado < Cantidad ,buscoPatronesConMinimo(Dados, MinimoEsperado, Maximo, Patrones),!
     ;
-        findall(PatronesBase, buscoPatronesConMinimo(Dados, Cantidad, Maximo, PatronesBase), Patrones),!
+        buscoPatronesConMinimo(Dados, Cantidad, Maximo, Patrones),!
     ).
     
 
