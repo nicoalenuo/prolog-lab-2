@@ -1,6 +1,7 @@
 :- use_module(library(random)).
 :- use_module(library(readutil)).
 :- use_module(library(filesex)).
+:- consult("conexion_problog.pl").
 
 consultar_probabilidad_unica(Categoria, [D1, D2, D3, D4, D5], [X1, X2, X3, X4, X5], Probabilidad):-
     absolute_file_name(path(problog),Problog,[access(exist),extensions([exe])]),
@@ -258,13 +259,27 @@ eleccion_slot(Dados, Tablero, ia_det, Categoria):- % Devuelvo la categoria que d
 
 % ---------------------------------------------------
 
+elegir_patron(_, 0).
+elegir_patron([Patron|RestoPatron], Repetir) :-
+    Repetir > 0,
+    write('Ingresar un numero para cambiar el dado: [0 = Mantener] , [1 = Cambiar] '), nl,
+    get_single_char(Char),
+    atom_chars(Atom, [Char]),  % Convertir el carácter a un átomo
+    (   atom_number(Atom, Patron), % Convertir el átomo a un número
+        between(0, 1, Patron) -> % Verificar que el número esté en el rango [0, 1]
+        NuevoRepetir is Repetir - 1,
+        elegir_patron(RestoPatron, NuevoRepetir)
+    ;   write('Entrada invalida, por favor ingrese un numero entre el rango [0-1]: '), nl,
+        elegir_patron([Patron|RestoPatron], Repetir) % Llamada recursiva si la entrada no es válida
+    ).
+
+cambio_dados(_, _, humano, Patron)  :-
+    elegir_patron(Patron, 5).
+    
 cambio_dados(Dados, Tablero, ia_det, Patron) :-
     tiene_n_del_mismo_tipo(Dados,5,_),
     member(s(yahtzee,nil),Tablero),
     Patron = [0,0,0,0,0].
-
-cambio_dados(_, _, humano, Patron)  :-
-    elegir_patron(Patron, 5).
 
 cambio_dados(Dados, Tablero, ia_det, Patron) :-
     tiene_n_del_mismo_tipo(Dados,3,Tipo),
@@ -373,19 +388,10 @@ cambio_dados(Dados, Tablero, ia_det, Patron) :-
 
 cambio_dados(_, _, ia_det, [1,1,1,1,1]).
 
-elegir_patron(_, 0).
-elegir_patron([Patron|RestoPatron], Repetir) :-
-    Repetir > 0,
-    write('Ingresar un numero para cambiar el dado: [0 = Mantener] , [1 = Cambiar] '), nl,
-    get_single_char(Char),
-    atom_chars(Atom, [Char]),  % Convertir el carácter a un átomo
-    (   atom_number(Atom, Patron), % Convertir el átomo a un número
-        between(0, 1, Patron) -> % Verificar que el número esté en el rango [0, 1]
-        NuevoRepetir is Repetir - 1,
-        elegir_patron(RestoPatron, NuevoRepetir)
-    ;   write('Entrada invalida, por favor ingrese un numero entre el rango [0-1]: '), nl,
-        elegir_patron([Patron|RestoPatron], Repetir) % Llamada recursiva si la entrada no es válida
-    ).
+% cambio_dados([1,1,2,3,4],[s(full_house,nil)],ia_prob,Patron).
+cambio_dados(Dados, Tablero, ia_prob, Patron) :-
+     obtener_categorias_disponibles(Tablero,Categorias),
+     mejor_categoria(Dados,Categorias,0,_,_,Patron).
 
 posicionesRepetido([],_,[]).
 posicionesRepetido([Dado|RestoDados],Num,[N|RestoLista]) :-
@@ -429,8 +435,6 @@ mostrar_tablero([s(Categoria, Puntos) | Resto]) :-
     mostrar_tablero(Resto).
 
 % ------------------------------------------------
-
-% eleccion_slot(Dados, Tablero, ia_prob, Categoria):-
 
 % Se lo llama como patron(5,X). Retorna todas las combinaciones posibles de patrones
 patron(1,[0]).
@@ -492,10 +496,6 @@ mejor_categoria(Dados,[Categoria|RestoCategoria],MejorProbAnterior,MejorPatronAn
 obtener_categorias_disponibles(Tablero,Categorias):-
      findall(Categoria, member(s(Categoria,nil),Tablero),Categorias).
 
-% cambio_dados([1,1,2,3,4],[s(full_house,nil)],ia_prob,Patron).
-cambio_dados(Dados, Tablero, ia_prob, Patron) :-
-     obtener_categorias_disponibles(Tablero,Categorias),
-     mejor_categoria(Dados,Categorias,0,_,_,Patron).
 % ------------------------------------------------
 
 % Se llama a yahtzee para jugar con un humano
