@@ -451,7 +451,7 @@ mostrar_tablero([s(Categoria, Puntos) | Resto]) :-
 
 % ------------------------------------------------
 
-eleccion_slot_prob(_,[],MejorProb,CategoriaFinal,CategoriaFinal).
+eleccion_slot_prob(_,[],_,CategoriaFinal,CategoriaFinal).
 eleccion_slot_prob(Dados,[Categoria|RestoCategoria],MejorProb,MejorCat,CategoriaFinal):-
      probabilidad(Categoria,[0,0,0,0,0],Dados,Prob), %funcion implementada en problog
      (
@@ -465,7 +465,7 @@ eleccion_slot(Dados, Tablero, ia_prob, Categoria):-
      map_puntajes(Tablero, Dados, PuntajesCategoria),
      mostrar_slots_disponibles(PuntajesCategoria, 1), nl,
      obtener_categorias_disponibles(Tablero,Categorias),
-     eleccion_slot_prob(Dados,Categorias,0,MejorCat,Categoria).
+     eleccion_slot_prob(Dados,Categorias,0,_,Categoria).
 
 lista_de_listas(Lista1,[Lista1|[]]).
 
@@ -477,6 +477,7 @@ patron_por_numero([Dado|Dados],Numero,[1|Patron]):-
     patron_por_numero(Dados,Numero,Patron).
 
 patron_general(Dados, MinimoEsperado, Patrones) :-
+    writeln(MinimoEsperado),
     maximo_dado_repetido(Dados, Maximo, Cantidad),
     (MinimoEsperado < Cantidad ->
         findall(PatronesBase, buscoPatronesConMinimo(Dados, MinimoEsperado, Maximo, PatronesBase), Patrones),!
@@ -488,17 +489,19 @@ patron_general(Dados, MinimoEsperado, Patrones) :-
 buscoPatronesConMinimo([NumeroObj|Dados],MinimoEsperado,NumeroObj,[0|Patrones]):-
     MinimoEsperado > 0,
     NuevoMin is MinimoEsperado - 1,
-    buscoPatronesConMinimo(Dados,NuevoMin,NumeroObj,Patrones).
+    buscoPatronesConMinimo(Dados,NuevoMin,NumeroObj,Patrones),!.
 buscoPatronesConMinimo([NumeroObj|Dados],0,NumeroObj,[0|Patrones]):-
-    buscoPatronesConMinimo(Dados,0,NumeroObj,Patrones).
+    NumeroObj >= 4,
+    buscoPatronesConMinimo(Dados,0,NumeroObj,Patrones),!.
 buscoPatronesConMinimo([NumeroObj|Dados],0,NumeroObj,[1|Patrones]):-
-    buscoPatronesConMinimo(Dados,0,NumeroObj,Patrones).
-buscoPatronesConMinimo([Dado|Dados],MinimoEsperado,NumeroObj,[1|Patrones]):-
-    Dado \= NumeroObj,
-    buscoPatronesConMinimo(Dados,MinimoEsperado,NumeroObj,Patrones).
+    buscoPatronesConMinimo(Dados,0,NumeroObj,Patrones),!.
 buscoPatronesConMinimo([Dado|Dados],MinimoEsperado,NumeroObj,[0|Patrones]):-
     Dado \= NumeroObj,
-    buscoPatronesConMinimo(Dados,MinimoEsperado,NumeroObj,Patrones).
+    Dado >= 4,
+    buscoPatronesConMinimo(Dados,MinimoEsperado,NumeroObj,Patrones),!.
+buscoPatronesConMinimo([Dado|Dados],MinimoEsperado,NumeroObj,[1|Patrones]):-
+    Dado \= NumeroObj,
+    buscoPatronesConMinimo(Dados,MinimoEsperado,NumeroObj,Patrones),!.
 buscoPatronesConMinimo([],_,_,[]).
 
 maximo_dado_repetido(Dados,Maximo,Cantidad):-
