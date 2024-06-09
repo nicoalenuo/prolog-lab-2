@@ -433,7 +433,6 @@ mostrar_tablero([s(Categoria, Puntos) | Resto]) :-
 % eleccion_slot(Dados, Tablero, ia_prob, Categoria):-
 
 % Se lo llama como patron(5,X). Retorna todas las combinaciones posibles de patrones
-
 patron(1,[0]).
 patron(1,[1]).
 patron(K,[0|Resto]):-
@@ -444,84 +443,59 @@ patron(K,[1|Resto]):-
     K > 1,
     N is K - 1,
     patron(N,Resto).
+    
+%dependiendo de la categoria y los dados, obtiene la lista de los "mejores" patrones
+%por el momento, obtiene toda la lista de patrones posibles
+obtener_patrones(Dados,Categoria,Patrones):-
+     findall(Patron, patron(5, Patron), Patrones). %en vez de obtener todos los patrones posibles, deberíamos de optimizar para mejorar el tiempo
 
+%sabiendo los dados, la categoría y la lista de patrones, retorna la suma de las probabilidades de los patrones y el mejor patron de dicha lista
+acumular_probabilidad_categoria(_,_,[],ProbFinal,ProbFinal,PatronFinal,PatronFinal).
+acumular_probabilidad_categoria(Dados,Categoria,[Patron|RestoPatrones],MejorProb,ProbFinal,MejorPatron,PatronFinal):-
+     consultar_probabilidad_unica(Categoria,Dados,Patron,Prob), %funcion implementada en problog
+     (
+     Prob =< MejorProb,
+     acumular_probabilidad_categoria(Dados,Categoria,RestoPatrones,MejorProb,ProbFinal,MejorPatron,PatronFinal);
+     Prob > MejorProb,
+     acumular_probabilidad_categoria(Dados,Categoria,RestoPatrones,Prob,ProbFinal,Patron,PatronFinal)
+     ).
 
-sumador([],_,_,X,X).
-sumador([(Prob,Exit)|RestoProb],Tipo,Base,ValorEsperado,Acumulador):-
-    Cuenta1 is Exit * Tipo,
-    Cuenta2 is Base + Cuenta1,
-    Cuenta3 is Prob * Cuenta2,
-    Acumulador2 is Cuenta3 + Acumulador,
-    sumador(RestoProb,Tipo,Base,ValorEsperado,Acumulador2).
+copiar([], []). % Caso base: una lista vacía se copia como una lista vacía
+copiar([Lista1|RestoLista1], [Lista1|RestoLista2]) :-
+    copiar(RestoLista1, RestoLista2). % Caso recursivo: copiar la cola de la lista
 
-valor_esperado_categoria(Dados,Tipo,Patron,ValorEsperado):-
-    cuantos_de_tipo(Dados,Tipo,Cant,0),
-    findall(Probabilidades,probsCatSuperior(Dados,Patron,1,0,Probabilidades),Prob),
-    Base is Cant * Tipo,
-    sumador(Prob,Tipo,Base,ValorEsperado,0).
-
-
-
-mejor_patron_categoria(_,_,[],X,Y,X,Y).
-mejor_patron_categoria(Dados,Categoria,[Patron|Patrones],MejorVal,MejorPatron,Acum,AcumuladorPatr) :-
-    categorias_seccion_superior(Lista),
-    member(m(Tipo,Categoria),Lista),
-    valor_esperado_categoria(Dados,Tipo,Patron,ValorEsperado),
-    Max is Tipo * 5,
-    ValorRico is ValorEsperado / Max,
-    ( 
-    ValorRico =< Acum,
-    mejor_patron_categoria(Dados,Categoria,Patrones,MejorVal,MejorPatron,Acum,AcumuladorPatr);
-    ValorRico > Acum,
-    mejor_patron_categoria(Dados,Categoria,Patrones,MejorVal,MejorPatron,ValorRico,Patron)
+%sabiendo los dados y la categoria, retorna el mejor patron posible para dicha categoria
+mejor_prob_categoria(Dados,Categoria,Patrones,MejorProb,MejorPatron,ProbAnterior,PatronAnterior) :-
+    acumular_probabilidad_categoria(Dados,Categoria,Patrones,0,ProbFinal,_,PatronFinal),
+    (
+    ProbFinal =< ProbAnterior,
+    MejorProb is ProbAnterior,
+    copiar(MejorPatron,PatronAnterior);
+    ProbFinal > ProbAnterior,
+    MejorProb is ProbFinal,
+    copiar(MejorPatron,PatronFinal)
     ).
 
+%sabiendo los dados y las categorias restantes, retorna el mejor patron posible para todas las categorias
+mejor_categoria(_,[],X,Y,X,Y).
+mejor_categoria(Dados,[Categoria|RestoCategoria],MejorProbAnterior,MejorPatronAnterior,ProbFinal,PatronFinal):-  %MejorPatron no se está cargando pero MejorProb si? XD
+    obtener_patrones(Dados,Categoria,Patrones),
+    mejor_prob_categoria(Dados,Categoria,Patrones,MejorProb,_,MejorProbAnterior,MejorPatronAnterior),
+    MejorProb =< MejorProbAnterior,
+    mejor_categoria(Dados,RestoCategoria,MejorProbAnterior,MejorPatronAnterior,ProbFinal,PatronFinal).
+mejor_categoria(Dados,[Categoria|RestoCategoria],MejorProbAnterior,MejorPatronAnterior,ProbFinal,PatronFinal):-
+    obtener_patrones(Dados,Categoria,Patrones),
+    mejor_prob_categoria(Dados,Categoria,Patrones,MejorProb,MejorPatron,MejorProbAnterior,MejorPatronAnterior),
+    MejorProb > MejorProbAnterior,
+    mejor_categoria(Dados,RestoCategoria,MejorProb,MejorPatron,ProbFinal,PatronFinal).
 
+obtener_categorias_disponibles(Tablero,Categorias):-
+     findall(Categoria, member(s(Categoria,nil),Tablero),Categorias).
 
-mejor_categoria_aux(Dados,Categoria,Patrones):-
-    categorias_seccion_superior(Lista),
-    member(m(Tipo,Categoria),Lista),
-    patronxnumero(Dados,Tipo,PatronBase),
-    findall(PatronBase,patron(5,PatronBase),Patrones).
-
-
-
-mejor_categoria(_,[],_,_).
-mejor_categoria(Dados,[s(Categoria, _) | RestoPuntajesCategoria],MejorValorAnterior,MejorPatronAnterior):-
-    mejor_categoria_aux(Dados,Categoria,Patrones),
-    mejor_patron_categoria(Dados,Categoria,Patrones,MejorValor,MejorPatron,0,_),
-    MejorValor =< MejorValorAnterior,
-    mejor_categoria(Dados,RestoPuntajesCategoria,MejorValorAnterior,MejorPatronAnterior).
-
-mejor_categoria(Dados,[s(Categoria, _) | RestoPuntajesCategoria],MejorValorAnterior,_):-
-    mejor_categoria_aux(Dados,Categoria,Patrones),
-    mejor_patron_categoria(Dados,Categoria,Patrones,MejorValor,MejorPatron,0,_),
-    MejorValor > MejorValorAnterior,
-    mejor_categoria(Dados,RestoPuntajesCategoria,MejorValor,MejorPatron).
-
-
-
-
+% cambio_dados([1,1,2,3,4],[s(full_house,nil)],ia_prob,Patron).
 cambio_dados(Dados, Tablero, ia_prob, Patron) :-
-    map_puntajes(Tablero,Dados,PuntajesCategoria),
-    mejor_categoria(Dados,PuntajesCategoria,0,Patron).
-
-patronxnumero([],_,[]).
-patronxnumero([Dado|Resto],N,[X|RestoPatron]):-
-    N =:= Dado,
-    X is 0,
-    patronxnumero(Resto,N,RestoPatron).
-patronxnumero([Dado|Resto],N,[_|RestoPatron]):-
-    N =\= Dado,
-    patronxnumero(Resto,N,RestoPatron).
-
-cuantos_de_tipo([],_,X,X).
-cuantos_de_tipo([Tipo | RestoDados],Tipo,N,Acum):-
-    Acum2 is Acum + 1,
-    cuantos_de_tipo(RestoDados,Tipo,N,Acum2).
-cuantos_de_tipo([Dado | RestoDados],Tipo,N,Acum):-
-    Dado =\= Tipo,
-    cuantos_de_tipo(RestoDados,Tipo,N,Acum).
+     obtener_categorias_disponibles(Tablero,Categorias),
+     mejor_categoria(Dados,Categorias,0,_,_,Patron).
 % ------------------------------------------------
 
 % Se llama a yahtzee para jugar con un humano
