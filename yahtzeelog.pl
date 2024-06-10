@@ -516,6 +516,18 @@ patron_escalera_large(Dados,Patron):-
         member(Sublista,[[3],[4],[2],[5],[6],[1]]),sublist(Sublista, Res),patron_secuencia(Dados,Sublista,Patron),!
     ).
 
+patron_yahtzee(Dados,Patrones):-
+    maximo_dado_repetido(Dados,Maximo,_),
+    patron_por_numero(Dados,Maximo,Patrones).
+patron_chance([Dado|Dados],[1|Patrones]):-
+    Dado < 5,
+    !,
+    patron_chance(Dados,Patrones).
+patron_chance([_|Dados],[0|Patrones]):-
+    patron_chance(Dados,Patrones).
+patron_chance([],[]).
+    
+
 patron_secuencia([Dado|Dados],Sublista,[0|Patron]):-
     select(Dado,Sublista,Sublistita),!,
     patron_secuencia(Dados,Sublistita,Patron).
