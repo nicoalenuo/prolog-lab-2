@@ -476,11 +476,11 @@ patron_por_numero([Dado|Dados],Numero,[1|Patron]):-
     Dado \= Numero,
     patron_por_numero(Dados,Numero,Patron).
 
-patron_general(Dados, MinimoEsperado, Patrones) :-
+patron_general(Dados, MinimoEsperado, Patron) :-
     maximo_dado_repetido(Dados, Maximo, Cantidad),
-    (MinimoEsperado < Cantidad ,buscoPatronesConMinimo(Dados, MinimoEsperado, Maximo, Patrones),!
+    (MinimoEsperado < Cantidad ,buscoPatronesConMinimo(Dados, MinimoEsperado, Maximo, Patron),!
     ;
-        buscoPatronesConMinimo(Dados, Cantidad, Maximo, Patrones),!
+        buscoPatronesConMinimo(Dados, Cantidad, Maximo, Patron),!
     ).
     
 patron_full(Dados,Patron):-
@@ -516,9 +516,9 @@ patron_escalera_large(Dados,Patron):-
         member(Sublista,[[3],[4],[2],[5],[6],[1]]),sublist(Sublista, Res),patron_secuencia(Dados,Sublista,Patron),!
     ).
 
-patron_yahtzee(Dados,Patrones):-
+patron_yahtzee(Dados,Patron):-
     maximo_dado_repetido(Dados,Maximo,_),
-    patron_por_numero(Dados,Maximo,Patrones).
+    patron_por_numero(Dados,Maximo,Patron).
 patron_chance([Dado|Dados],[1|Patrones]):-
     Dado < 5,
     !,
@@ -618,29 +618,35 @@ mejor_grupo([],Maximo,Cantidad,Cantidad,Maximo).
 
 %dependiendo de la categoria y los dados, obtiene la lista de los "mejores" patrones
 %por el momento, obtiene toda la lista de patrones posibles
-obtener_patrones(Dados,Categoria,Patrones):-
+obtener_patrones(Dados,Categoria,Patron):-
     % cambio_dados(Dados,[s(Categoria,nil)],ia_det,Patron),
-    % lista_de_listas(Patron,Patrones).
-    (categorias_seccion_superior(Lista), member(m(Tipo,Categoria),Lista), patron_por_numero(Dados,Tipo,Patrones),!; %Patrones para las categorias superiores
-    Categoria = three_of_a_kind, patron_general(Dados,3,Patrones);
-    Categoria = four_of_a_kind, patron_general(Dados,4,Patrones);
-    Categoria = full_house, patron_full(Dados,Patrones);
-    Categoria = small_straight, patron_escalera_small(Dados,Patrones);
-    Categoria = large_straight, patron_escalera_large(Dados,Patrones);
-    Categoria = yahtzee, patron_yahtzee(Dados,Patrones);
-    Categoria = chance, patron_chance(Dados,Patrones)
+    % lista_de_listas(Patron,Patron).
+    (categorias_seccion_superior(Lista), member(m(Tipo,Categoria),Lista), patron_por_numero(Dados,Tipo,Patron),!; %Patron para las categorias superiores
+    Categoria = three_of_a_kind, patron_general(Dados,3,Patron);
+    Categoria = four_of_a_kind, patron_general(Dados,4,Patron);
+    Categoria = full_house, patron_full(Dados,Patron);
+    Categoria = small_straight, patron_escalera_small(Dados,Patron);
+    Categoria = large_straight, patron_escalera_large(Dados,Patron);
+    Categoria = yahtzee, patron_yahtzee(Dados,Patron);
+    Categoria = chance, patron_chance(Dados,Patron)
     ).
+
+calcular_valor_esperado(Categoria,[(Tirada,Prob)|Probs],Esperado):-
+    puntaje(Tirada,Categoria,Puntos),
+    X is Puntos * Prob,
+    calcular_valor_esperado(Categoria,Probs,EsperadoAux),
+    Esperado is X + EsperadoAux.   
+calcular_valor_esperado(_,[],0).
 
 
 %sabiendo los dados, la categoría y la lista de patrones, la mejor probabilidad y el mejor patron de dicha lista
-acumular_probabilidad_categoria(_,_,[],ProbFinal,ProbFinal,PatronFinal,PatronFinal).
-acumular_probabilidad_categoria(Dados,Categoria,[Patron|RestoPatrones],MejorProb,ProbFinal,MejorPatron,PatronFinal):-
-     probabilidad(Categoria,Patron,Dados,Prob), %funcion implementada en problog
+acumular_probabilidad_categoria(_,_,[],EsperadoFinal,EsperadoFinal,PatronFinal,PatronFinal).
+acumular_probabilidad_categoria(Dados,Categoria,Patron,MejorEsperado,EsperadoFinal,MejorPatron,PatronFinal):-
+     probabilidad(Categoria,Patron,Dados,Probs), %funcion implementada en problog
+     calcular_valor_esperado(Categoria,Probs,Esperado),
      (
-     Prob =< MejorProb,
-     acumular_probabilidad_categoria(Dados,Categoria,RestoPatrones,MejorProb,ProbFinal,MejorPatron,PatronFinal);
-     Prob > MejorProb,
-     acumular_probabilidad_categoria(Dados,Categoria,RestoPatrones,Prob,ProbFinal,Patron,PatronFinal)
+     Esperado =< MejorEsperado, acumular_probabilidad_categoria(Dados,Categoria,RestoPatrones,MejorEsperado,EsperadoFinal,MejorPatron,PatronFinal);
+     Esperado > MejorEsperado, acumular_probabilidad_categoria(Dados,Categoria,RestoPatrones,Esperado,EsperadoFinal,Patron,PatronFinal)
      ).
 
 copiar([], []). % Caso base: una lista vacía se copia como una lista vacía
@@ -648,27 +654,27 @@ copiar([Lista1|RestoLista1], [Lista1|RestoLista2]) :-
     copiar(RestoLista1, RestoLista2). % Caso recursivo: copiar la cola de la lista
 
 %sabiendo los dados y la categoria, retorna el mejor patron posible para dicha categoria
-mejor_prob_categoria(Dados,Categoria,Patrones,MejorProb,MejorPatron,ProbAnterior,PatronAnterior) :-
-    acumular_probabilidad_categoria(Dados,Categoria,Patrones,0,ProbFinal,_,PatronFinal),
+mejor_prob_categoria(Dados,Categoria,Patron,Esperado,MejorEsperadoAnterior) :-
+    acumular_probabilidad_categoria(Dados,Categoria,Patron,0,EsperadoCategoria,_,PatronFinal),
     (
-    ProbFinal =< ProbAnterior,
-    MejorProb is ProbAnterior,
-    copiar(MejorPatron,PatronAnterior);
-    ProbFinal > ProbAnterior,
-    MejorProb is ProbFinal,
-    copiar(MejorPatron,PatronFinal)
+    EsperadoCategoria =< MejorEsperadoAnterior,
+    Esperado is MejorEsperadoAnterior,
+    copiar(Esperado,MejorEsperadoAnterior);
+    EsperadoCategoria > MejorEsperadoAnterior,
+    Esperado is EsperadoCategoria,
+    copiar(Esperado,MejorEsperadoAnterior)
     ).
 
 %sabiendo los dados y las categorias restantes, retorna el mejor patron posible para todas las categorias
 mejor_categoria(_,[],X,Y,X,Y).
-mejor_categoria(Dados,[Categoria|RestoCategoria],MejorProbAnterior,MejorPatronAnterior,ProbFinal,PatronFinal):-  %MejorPatron no se está cargando pero MejorProb si? XD
-    obtener_patrones(Dados,Categoria,Patrones),
-    mejor_prob_categoria(Dados,Categoria,Patrones,MejorProb,MejorPatron,MejorProbAnterior,MejorPatronAnterior),
+mejor_categoria(Dados,[Categoria|RestoCategoria],MejorValorAnterior,MejorPatronAnterior,ProbFinal,PatronFinal):-  %MejorPatron no se está cargando pero MejorProb si? XD
+    obtener_patrones(Dados,Categoria,Patron),
+    mejor_prob_categoria(Dados,Categoria,Patron,ValorEsperado,MejorValorAnterior),
     (
-    MejorProb =< MejorProbAnterior,
-    mejor_categoria(Dados,RestoCategoria,MejorProbAnterior,MejorPatronAnterior,ProbFinal,PatronFinal);
-    MejorProb > MejorProbAnterior,
-    mejor_categoria(Dados,RestoCategoria,MejorProb,MejorPatron,ProbFinal,PatronFinal)
+    ValorEsperado =< MejorValorAnterior,
+    mejor_categoria(Dados,RestoCategoria,MejorValorAnterior,MejorPatronAnterior,ProbFinal,PatronFinal);
+    ValorEsperado > MejorValorAnterior,
+    mejor_categoria(Dados,RestoCategoria,ValorEsperado,Patron,ProbFinal,PatronFinal)
     ).
 
 obtener_categorias_disponibles(Tablero,Categorias):-
