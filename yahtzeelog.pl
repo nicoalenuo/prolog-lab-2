@@ -483,6 +483,50 @@ patron_general(Dados, MinimoEsperado, Patrones) :-
         buscoPatronesConMinimo(Dados, Cantidad, Maximo, Patrones),!
     ).
     
+patron_full(Dados,Patron):-
+    grupos_full(Dados,[Grupo1|Resto]),
+    patron_grupo(Dados,Grupo1,0,Patron1),
+    (
+        Resto \= [], [Grupo2] = Resto,patron_grupo(Dados,Grupo2,0,Patron2),!;
+        Patron2 = [1,1,1,1,1]
+    ),
+    fusionarPatrones(Patron1,Patron2,Patron).
+
+
+patron_grupo([Numero|Dados],(Numero,_),Limitador,[0|Patron]):-
+    Limitador < 3,
+    LimitadorAux is Limitador + 1,
+    patron_grupo(Dados,(Numero,_),LimitadorAux,Patron),!.
+patron_grupo([Numero|Dados],(Numero,_),Limitador,[1|Patron]):-
+    Limitador >= 3,
+    patron_grupo(Dados,(Numero,_),Limitador,Patron),!.
+patron_grupo([Dado|Dados],(Numero,_),Limitador,[1|Patron]):-
+    Dado \= Numero,
+    patron_grupo(Dados,(Numero,_),Limitador,Patron),!.
+patron_grupo([],_,_,[]).
+
+fusionarPatrones([0|Patron1],[_|Patron2],[0|Patron]):-
+    fusionarPatrones(Patron1,Patron2,Patron),!.
+fusionarPatrones([_|Patron1],[0|Patron2],[0|Patron]):-
+    fusionarPatrones(Patron1,Patron2,Patron),!.
+fusionarPatrones([1|Patron1],[1|Patron2],[1|Patron]):-
+    fusionarPatrones(Patron1,Patron2,Patron),!.
+fusionarPatrones([],[],[]).
+
+
+grupos_full(Dados,Grupos):-
+    sort_unicos(Dados,Res),
+    cant_por_grupo(Dados,Res,Lista),
+    mejor_grupo(Lista,Maximo,Cantidad,0,0),
+    select((Maximo,Cantidad), Lista, Lista2),
+    (
+        Lista2 \= [], mejor_grupo(Lista2,Maximo2,Cantidad2,0,0),Grupos = [(Maximo,Cantidad),(Maximo2,Cantidad2)],!;
+        Grupos = [(Maximo,Cantidad)],!
+    ).
+
+
+    
+
 
 buscoPatronesConMinimo([NumeroObj|Dados],MinimoEsperado,NumeroObj,[0|Patrones]):-
     MinimoEsperado > 0,
@@ -535,9 +579,10 @@ mejor_grupo([],Maximo,Cantidad,Cantidad,Maximo).
 obtener_patrones(Dados,Categoria,Patrones):-
     % cambio_dados(Dados,[s(Categoria,nil)],ia_det,Patron),
     % lista_de_listas(Patron,Patrones).
-    (categorias_seccion_superior(Lista), member(m(Tipo,Categoria),Lista), patron_por_numero(Dados,Tipo,Patrones),!); %Patrones para las categorias superiores
-    (Categoria = three_of_a_kind, patron_general(Dados,3,Patrones));
-    (Categoria = four_of_a_kind, patron_general(Dados,4,Patrones)).
+    (categorias_seccion_superior(Lista), member(m(Tipo,Categoria),Lista), patron_por_numero(Dados,Tipo,Patrones),!; %Patrones para las categorias superiores
+    Categoria = three_of_a_kind, patron_general(Dados,3,Patrones);
+    Categoria = four_of_a_kind, patron_general(Dados,4,Patrones);
+    Categoria = full_house, patron_full(Dados)).
 
 
 %sabiendo los dados, la categoría y la lista de patrones, la mejor probabilidad y el mejor patron de dicha lista
