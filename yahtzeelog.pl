@@ -616,11 +616,7 @@ mejor_grupo([(Numero,Cant)|RestoLista],Maximo,Cantidad,AuxCant,AuxMax):-
 mejor_grupo([],Maximo,Cantidad,Cantidad,Maximo).
 
 
-%dependiendo de la categoria y los dados, obtiene la lista de los "mejores" patrones
-%por el momento, obtiene toda la lista de patrones posibles
 obtener_patrones(Dados,Categoria,Patron):-
-    % cambio_dados(Dados,[s(Categoria,nil)],ia_det,Patron),
-    % lista_de_listas(Patron,Patron).
     (categorias_seccion_superior(Lista), member(m(Tipo,Categoria),Lista), patron_por_numero(Dados,Tipo,Patron),!; %Patron para las categorias superiores
     Categoria = three_of_a_kind, patron_general(Dados,3,Patron);
     Categoria = four_of_a_kind, patron_general(Dados,4,Patron);
@@ -630,20 +626,37 @@ obtener_patrones(Dados,Categoria,Patron):-
     Categoria = yahtzee, patron_yahtzee(Dados,Patron);
     Categoria = chance, patron_chance(Dados,Patron)
     ).
+calcular_valor_esperado_sup(Categoria,[(Num,Cant,Prob)|RestoProbs],Esperado):-
+    Puntaje is Num * Cant,
+    X is Puntaje * Prob,
+    calcular_valor_esperado_sup(Categoria,RestoProbs,EsperadoAux),
+    Esperado is X + EsperadoAux.   
+calcular_valor_esperado_sup(_,[],0).
 
-calcular_valor_esperado(Categoria,[(Tirada,Prob)|Probs],Esperado):-
+calcular_valor_esperado_inferior1(Categoria,[(Tirada,Prob)|Probs],Esperado):-
     puntaje(Tirada,Categoria,Puntos),
     X is Puntos * Prob,
-    calcular_valor_esperado(Categoria,Probs,EsperadoAux),
+    calcular_valor_esperado_inferior1(Categoria,Probs,EsperadoAux),
     Esperado is X + EsperadoAux.   
-calcular_valor_esperado(_,[],0).
+calcular_valor_esperado_inferior1(_,[],0).
 
+calcular_valor_esperado_inferior2(Categoria,Prob,Esperado):-
+    (
+        Categoria = full_house,Esperado is Prob * 25,!;
+        Categoria = small_straight,Esperado is Prob * 30,!;
+        Categoria = large_straight,Esperado is Prob * 40,!;
+        Categoria = yahtzee,Esperado is Prob * 50,!
+    ).
 
-%sabiendo los dados, la categoría y la lista de patrones, la mejor probabilidad y el mejor patron de dicha lista
+%sabiendo los dados, la categoría y la lista de patrones, devuelve la mejor esperanza y patron
 esperado_patron_categoria(_,_,[],EsperadoFinal,EsperadoFinal,PatronFinal,PatronFinal).
 esperado_patron_categoria(Dados,Categoria,Patron,MejorEsperadoAnterior,EsperadoFinal,MejorPatronAnterior,PatronFinal):-
-     probabilidad(Categoria,Patron,Dados,Probs), %funcion implementada en problog
-     calcular_valor_esperado(Categoria,Probs,Esperado),
+    probabilidad(Categoria,Patron,Dados,Prob),
+     (
+        member(Categoria,[aces,twos,threes,fours,fives,sixes]),calcular_valor_esperado_sup(Categoria,Prob,Esperado);
+        member(Categoria,[three_of_a_kind,four_of_a_kind,chance]),calcular_valor_esperado_inferior1(Categoria,Prob,Esperado);
+        member(Categoria,[full_house, small_straight, large_straight , yahtzee]),calcular_valor_esperado_inferior2(Categoria,Prob,Esperado)
+     ),
      (
      Esperado =< MejorEsperadoAnterior, esperado_patron_categoria(Dados,Categoria,RestoPatrones,MejorEsperadoAnterior,EsperadoFinal,MejorPatronAnterior,PatronFinal);
      Esperado > MejorEsperadoAnterior, esperado_patron_categoria(Dados,Categoria,RestoPatrones,Esperado,EsperadoFinal,Patron,PatronFinal)
