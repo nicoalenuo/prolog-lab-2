@@ -640,42 +640,22 @@ calcular_valor_esperado(_,[],0).
 
 
 %sabiendo los dados, la categoría y la lista de patrones, la mejor probabilidad y el mejor patron de dicha lista
-acumular_probabilidad_categoria(_,_,[],EsperadoFinal,EsperadoFinal,PatronFinal,PatronFinal).
-acumular_probabilidad_categoria(Dados,Categoria,Patron,MejorEsperado,EsperadoFinal,MejorPatron,PatronFinal):-
+esperado_patron_categoria(_,_,[],EsperadoFinal,EsperadoFinal,PatronFinal,PatronFinal).
+esperado_patron_categoria(Dados,Categoria,Patron,MejorEsperadoAnterior,EsperadoFinal,MejorPatronAnterior,PatronFinal):-
      probabilidad(Categoria,Patron,Dados,Probs), %funcion implementada en problog
      calcular_valor_esperado(Categoria,Probs,Esperado),
      (
-     Esperado =< MejorEsperado, acumular_probabilidad_categoria(Dados,Categoria,RestoPatrones,MejorEsperado,EsperadoFinal,MejorPatron,PatronFinal);
-     Esperado > MejorEsperado, acumular_probabilidad_categoria(Dados,Categoria,RestoPatrones,Esperado,EsperadoFinal,Patron,PatronFinal)
+     Esperado =< MejorEsperadoAnterior, esperado_patron_categoria(Dados,Categoria,RestoPatrones,MejorEsperadoAnterior,EsperadoFinal,MejorPatronAnterior,PatronFinal);
+     Esperado > MejorEsperadoAnterior, esperado_patron_categoria(Dados,Categoria,RestoPatrones,Esperado,EsperadoFinal,Patron,PatronFinal)
      ).
 
-copiar([], []). % Caso base: una lista vacía se copia como una lista vacía
-copiar([Lista1|RestoLista1], [Lista1|RestoLista2]) :-
-    copiar(RestoLista1, RestoLista2). % Caso recursivo: copiar la cola de la lista
-
-%sabiendo los dados y la categoria, retorna el mejor patron posible para dicha categoria
-mejor_prob_categoria(Dados,Categoria,Patron,Esperado,MejorEsperadoAnterior) :-
-    acumular_probabilidad_categoria(Dados,Categoria,Patron,0,EsperadoCategoria,_,PatronFinal),
-    (
-    EsperadoCategoria =< MejorEsperadoAnterior,
-    Esperado is MejorEsperadoAnterior,
-    copiar(Esperado,MejorEsperadoAnterior);
-    EsperadoCategoria > MejorEsperadoAnterior,
-    Esperado is EsperadoCategoria,
-    copiar(Esperado,MejorEsperadoAnterior)
-    ).
 
 %sabiendo los dados y las categorias restantes, retorna el mejor patron posible para todas las categorias
 mejor_categoria(_,[],X,Y,X,Y).
-mejor_categoria(Dados,[Categoria|RestoCategoria],MejorValorAnterior,MejorPatronAnterior,ProbFinal,PatronFinal):-  %MejorPatron no se está cargando pero MejorProb si? XD
+mejor_categoria(Dados,[Categoria|RestoCategoria],MejorEsperanzaAnterior,MejorPatronAnterior,MejorEsperanza,MejorPatron):-  %MejorPatron no se está cargando pero MejorProb si? XD
     obtener_patrones(Dados,Categoria,Patron),
-    mejor_prob_categoria(Dados,Categoria,Patron,ValorEsperado,MejorValorAnterior),
-    (
-    ValorEsperado =< MejorValorAnterior,
-    mejor_categoria(Dados,RestoCategoria,MejorValorAnterior,MejorPatronAnterior,ProbFinal,PatronFinal);
-    ValorEsperado > MejorValorAnterior,
-    mejor_categoria(Dados,RestoCategoria,ValorEsperado,Patron,ProbFinal,PatronFinal)
-    ).
+    esperado_patron_categoria(Dados,Categoria,Patron,MejorEsperanzaAnterior,MejorEsperanzaActual,MejorPatronAnterior,MejorPatronActual),
+    mejor_categoria(Dados,RestoCategoria,MejorEsperanzaActual,MejorPatronActual,MejorEsperanza,MejorPatron).
 
 obtener_categorias_disponibles(Tablero,Categorias):-
      findall(Categoria, member(s(Categoria,nil),Tablero),Categorias).
