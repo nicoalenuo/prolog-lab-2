@@ -129,8 +129,8 @@ tiene_semi_escalera_pequenia(Dados) :-
 
 sublist([], _).
 sublist([X|Xs], Ys) :-
-    append(_, [X|Suffix], Ys),
-    sublist(Xs, Suffix).
+    append(_, [X|Sufijo], Ys),
+    sublist(Xs, Sufijo).
 % Verificar si hay una escalera pequeña (4 consecutivos)
 tiene_escalera_pequenia(Dados) :-
     sort_unicos(Dados, DadosUnicos),
@@ -492,7 +492,37 @@ patron_full(Dados,Patron):-
     ),
     fusionarPatrones(Patron1,Patron2,Patron).
 
+patron_escalera_small(Dados,Patron):-
+    sort_unicos(Dados,Res),
+    (
+        member(Sublista,[[1,2,3,4,5]]),sublist(Sublista, Res),patron_secuencia(Dados,Sublista,Patron),!;
+        member(Sublista,[[1,2,3,4],[2,3,4,5]]),sublist(Sublista, Res),patron_secuencia(Dados,Sublista,Patron),!;
+        member(Sublista,[[1,2,3],[2,3,4],[3,4,5],[4,5,6]]),sublist(Sublista, Res),patron_secuencia(Dados,Sublista,Patron),!;
+        member(Sublista,[[1,2,4],[3,5,6]]),sublist(Sublista, Res),patron_secuencia(Dados,Sublista,Patron),!;
+        member(Sublista,[[3,4],[2,3],[4,5],[1,2],[5,6]]),sublist(Sublista, Res),patron_secuencia(Dados,Sublista,Patron),!;
+        member(Sublista,[[3],[4],[2],[5],[6],[1]]),sublist(Sublista, Res),patron_secuencia(Dados,Sublista,Patron),!
+    ).
 
+patron_escalera_large(Dados,Patron):-
+    sort_unicos(Dados,Res),
+    (
+        member(Sublista,[[1,2,3,4,5]]),sublist(Sublista, Res),patron_secuencia(Dados,Sublista,Patron),!;
+        member(Sublista,[[1,2,3,4],[2,3,4,5]]),sublist(Sublista, Res),patron_secuencia(Dados,Sublista,Patron),!;
+        member(Sublista,[[1,2,3,5],[2,3,4,6],[1,3,4,5],[2,4,5,6]]),sublist(Sublista, Res),patron_secuencia(Dados,Sublista,Patron),!;
+        member(Sublista,[[1,2,3],[2,3,4],[3,4,5],[4,5,6]]),sublist(Sublista, Res),patron_secuencia(Dados,Sublista,Patron),!;
+        member(Sublista,[[2,3,5,6],[1,2,4,5]]),sublist(Sublista, Res),patron_secuencia(Dados,Sublista,Patron),!;
+        member(Sublista,[[3,4,6],[1,3,4],[2,3,5],[4,5],[4,5],[1,2],[1,2],[5,6],[5,6]]),sublist(Sublista, Res),patron_secuencia(Dados,Sublista,Patron),!;
+        member(Sublista,[[3,4],[2,3],[4,5],[1,2],[5,6]]),sublist(Sublista, Res),patron_secuencia(Dados,Sublista,Patron),!;
+        member(Sublista,[[3],[4],[2],[5],[6],[1]]),sublist(Sublista, Res),patron_secuencia(Dados,Sublista,Patron),!
+    ).
+
+patron_secuencia([Dado|Dados],Sublista,[0|Patron]):-
+    select(Dado,Sublista,Sublistita),!,
+    patron_secuencia(Dados,Sublistita,Patron).
+patron_secuencia([Dado|Dados],Sublista,[1|Patron]):-
+    patron_secuencia(Dados,Sublista,Patron).
+patron_secuencia([],_,[]).
+    
 patron_grupo([Numero|Dados],(Numero,_),Limitador,[0|Patron]):-
     Limitador < 3,
     LimitadorAux is Limitador + 1,
@@ -582,7 +612,12 @@ obtener_patrones(Dados,Categoria,Patrones):-
     (categorias_seccion_superior(Lista), member(m(Tipo,Categoria),Lista), patron_por_numero(Dados,Tipo,Patrones),!; %Patrones para las categorias superiores
     Categoria = three_of_a_kind, patron_general(Dados,3,Patrones);
     Categoria = four_of_a_kind, patron_general(Dados,4,Patrones);
-    Categoria = full_house, patron_full(Dados)).
+    Categoria = full_house, patron_full(Dados,Patrones);
+    Categoria = small_straight, patron_escalera_small(Dados,Patrones);
+    Categoria = large_straight, patron_escalera_large(Dados,Patrones);
+    Categoria = yahtzee, patron_yahtzee(Dados,Patrones);
+    Categoria = chance, patron_chance(Dados,Patrones)
+    ).
 
 
 %sabiendo los dados, la categoría y la lista de patrones, la mejor probabilidad y el mejor patron de dicha lista
