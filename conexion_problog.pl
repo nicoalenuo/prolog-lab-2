@@ -11,11 +11,11 @@ consultar_probabilidades(Modelo, Probabilidad):-
 
 % Predicado para conseguir evidencias
 conseguir_evidencias([0|RestoPatron], [Dado|RestoDados], N, [Evidencia|RestoEvidencias]):-
-    (N =:= 1, Evidencia = evidence(dado1(Dado), true), N1 is N + 1, conseguir_evidencias(RestoPatron, RestoDados, N1, RestoEvidencias), !);
-    (N =:= 2, Evidencia = evidence(dado2(Dado), true), N1 is N + 1, conseguir_evidencias(RestoPatron, RestoDados, N1, RestoEvidencias), !);
-    (N =:= 3, Evidencia = evidence(dado3(Dado), true), N1 is N + 1, conseguir_evidencias(RestoPatron, RestoDados, N1, RestoEvidencias), !);
-    (N =:= 4, Evidencia = evidence(dado4(Dado), true), N1 is N + 1, conseguir_evidencias(RestoPatron, RestoDados, N1, RestoEvidencias), !);
-    (N =:= 5, Evidencia = evidence(dado5(Dado), true), N1 is N + 1, conseguir_evidencias(RestoPatron, RestoDados, N1, RestoEvidencias), !).
+    (N =:= 1, Evidencia = evidence(dado(1,Dado), true), N1 is N + 1, conseguir_evidencias(RestoPatron, RestoDados, N1, RestoEvidencias), !);
+    (N =:= 2, Evidencia = evidence(dado(2,Dado), true), N1 is N + 1, conseguir_evidencias(RestoPatron, RestoDados, N1, RestoEvidencias), !);
+    (N =:= 3, Evidencia = evidence(dado(3,Dado), true), N1 is N + 1, conseguir_evidencias(RestoPatron, RestoDados, N1, RestoEvidencias), !);
+    (N =:= 4, Evidencia = evidence(dado(4,Dado), true), N1 is N + 1, conseguir_evidencias(RestoPatron, RestoDados, N1, RestoEvidencias), !);
+    (N =:= 5, Evidencia = evidence(dado(5,Dado), true), N1 is N + 1, conseguir_evidencias(RestoPatron, RestoDados, N1, RestoEvidencias), !).
 conseguir_evidencias([1|RestoPatron], [_|RestoDados], N, Evidencias):-
     N1 is N + 1,
     conseguir_evidencias(RestoPatron, RestoDados, N1, Evidencias).
@@ -33,11 +33,6 @@ enviar_query(Categoria, Stream):-
     writeln(Stream, ').').
 
 probabilidad(Categoria, Patron, Dados, Probabilidad):-
-    %(
-    %Patron = [1,1,1,1,1],
-    %prob(Categoria,Probabilidad),
-    %!
-    %);
     conseguir_evidencias(Patron, Dados, 1, Evidencias),
     absolute_file_name(modelo, Modelo, [file_type(prolog)]),
     tmp_file_stream(text, TmpFile, Stream),
@@ -48,7 +43,3 @@ probabilidad(Categoria, Patron, Dados, Probabilidad):-
     enviar_query(Categoria, Stream),
     close(Stream),
     consultar_probabilidades(TmpFile, Probabilidad).
-    %(
-    %Patron = [1,1,1,1,1] ->
-    %asserta(prob(Categoria,Probabilidad))
-    %).
