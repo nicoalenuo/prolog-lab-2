@@ -225,7 +225,7 @@ eleccion_slot(Dados, Tablero, humano, Categoria) :-
 
     write('Seleccione una categoria indicando el numero id.'), nl,
 
-    flush_output(current_output), %falta ignorar el salto de linea (actualmente hay que apretar dos veces enter)
+    flush_output(current_output),
     read_line_to_string(user_input, Entrada),
 
     length(PuntajesCategoria, CantDisponibles),
@@ -255,6 +255,23 @@ eleccion_slot(Dados, Tablero, ia_det, Categoria):- % Devuelvo la categoria que d
      map_puntajes(Tablero, Dados, PuntajesCategoria),
      ordenar_por_puntaje(PuntajesCategoria, [s(Categoria, _) | _]).
 
+eleccion_slot(Dados, Tablero, ia_prob, Categoria):- % Falta revisar que este bien
+     map_puntajes(Tablero, Dados, PuntajesCategoria),
+     mostrar_slots_disponibles(PuntajesCategoria, 1), nl,
+     obtener_categorias_disponibles(Tablero,Categorias),
+     eleccion_slot_prob(Dados,Categorias,0,_,Categoria).
+
+eleccion_slot_prob(_,[],_,CategoriaFinal,CategoriaFinal).
+eleccion_slot_prob(Dados,[Categoria|RestoCategoria],MejorEsperanza,MejorCat,CategoriaFinal):- % Falta revisar que este bien
+     probabilidad(Categoria,[1,1,1,1,1],Dados,Prob), %funcion implementada en problog
+     puntaje(Dados,Categoria,Puntos),
+     Esperanza is Prob * Puntos,
+     (
+     Esperanza =< MejorEsperanza,
+     eleccion_slot_prob(Dados,RestoCategoria,MejorEsperanza,MejorCat,CategoriaFinal);
+     Esperanza > MejorEsperanza,
+     eleccion_slot_prob(Dados,RestoCategoria,Esperanza,Categoria,CategoriaFinal)
+     ).
 % ---------------------------------------------------
 
 cambio_dados(Dados, Tablero, ia_det, Patron) :-
@@ -343,7 +360,7 @@ cambio_dados(Dados, Tablero, ia_det, Patron) :-
     member(s(Cat,nil),Tablero),
     posicionesRepetido(Dados,Tipo,Patron),
     !.
-    
+
 cambio_dados(Dados, Tablero, ia_det, Patron) :-
     tiene_n_del_mismo_tipo(Dados,2,Tipo),
     member(s(full_house,nil),Tablero),
@@ -393,6 +410,11 @@ cambio_dados(Dados, Tablero, ia_det, Patron) :-
     !.
 
 cambio_dados(_, _, ia_det, [1,1,1,1,1]).
+
+% cambio_dados([1,1,2,3,4],[s(full_house,nil)],ia_prob,Patron).
+cambio_dados(Dados, Tablero, ia_prob, Patron) :-
+     obtener_categorias_disponibles(Tablero,Categorias),
+     mejor_categoria(Dados,Categorias,0,_,_,Patron).
 
 elegir_patron(_, 0).
 elegir_patron([Patron|RestoPatron], Repetir) :-
@@ -451,27 +473,11 @@ mostrar_tablero([s(Categoria, Puntos) | Resto]) :-
 
 % ------------------------------------------------
 
-eleccion_slot_prob(_,[],_,CategoriaFinal,CategoriaFinal).
-eleccion_slot_prob(Dados,[Categoria|RestoCategoria],MejorProb,MejorCat,CategoriaFinal):-
-     probabilidad(Categoria,[0,0,0,0,0],Dados,Prob), %funcion implementada en problog
-     (
-     Prob =< MejorProb,
-     eleccion_slot_prob(Dados,RestoCategoria,MejorProb,MejorCat,CategoriaFinal);
-     Prob > MejorProb,
-     eleccion_slot_prob(Dados,RestoCategoria,Prob,Categoria,CategoriaFinal)
-     ).
-
-eleccion_slot(Dados, Tablero, ia_prob, Categoria):-
-     map_puntajes(Tablero, Dados, PuntajesCategoria),
-     mostrar_slots_disponibles(PuntajesCategoria, 1), nl,
-     obtener_categorias_disponibles(Tablero,Categorias),
-     eleccion_slot_prob(Dados,Categorias,0,_,Categoria).
-
 lista_de_listas(Lista1,[Lista1|[]]).
 
 patron_por_numero([],_,[]).
 patron_por_numero([Numero|Dados],Numero,[0|Patron]):-
-    patron_por_numero(Dados,Numero,Patron).    
+    patron_por_numero(Dados,Numero,Patron).
 patron_por_numero([Dado|Dados],Numero,[1|Patron]):-
     Dado \= Numero,
     patron_por_numero(Dados,Numero,Patron).
@@ -482,7 +488,7 @@ patron_general(Dados, MinimoEsperado, Patron) :-
     ;
         buscoPatronesConMinimo(Dados, Cantidad, Maximo, Patron),!
     ).
-    
+
 patron_full(Dados,Patron):-
     grupos_full(Dados,[Grupo1|Resto]),
     patron_grupo(Dados,Grupo1,0,Patron1),
@@ -526,15 +532,14 @@ patron_chance([Dado|Dados],[1|Patrones]):-
 patron_chance([_|Dados],[0|Patrones]):-
     patron_chance(Dados,Patrones).
 patron_chance([],[]).
-    
 
 patron_secuencia([Dado|Dados],Sublista,[0|Patron]):-
-    select(Dado,Sublista,Sublistita),!,
-    patron_secuencia(Dados,Sublistita,Patron).
-patron_secuencia([Dado|Dados],Sublista,[1|Patron]):-
+    select(Dado,Sublista,Sublistita),
+    patron_secuencia(Dados,Sublistita,Patron),!.
+patron_secuencia([_|Dados],Sublista,[1|Patron]):-
     patron_secuencia(Dados,Sublista,Patron).
 patron_secuencia([],_,[]).
-    
+
 patron_grupo([Numero|Dados],(Numero,_),Limitador,[0|Patron]):-
     Limitador < 3,
     LimitadorAux is Limitador + 1,
@@ -555,7 +560,6 @@ fusionarPatrones([1|Patron1],[1|Patron2],[1|Patron]):-
     fusionarPatrones(Patron1,Patron2,Patron),!.
 fusionarPatrones([],[],[]).
 
-
 grupos_full(Dados,Grupos):-
     sort_unicos(Dados,Res),
     cant_por_grupo(Dados,Res,Lista),
@@ -565,10 +569,6 @@ grupos_full(Dados,Grupos):-
         Lista2 \= [], mejor_grupo(Lista2,Maximo2,Cantidad2,0,0),Grupos = [(Maximo,Cantidad),(Maximo2,Cantidad2)],!;
         Grupos = [(Maximo,Cantidad)],!
     ).
-
-
-    
-
 
 buscoPatronesConMinimo([NumeroObj|Dados],MinimoEsperado,NumeroObj,[0|Patrones]):-
     MinimoEsperado > 0,
@@ -594,7 +594,7 @@ maximo_dado_repetido(Dados,Maximo,Cantidad):-
     mejor_grupo(Lista,Maximo,Cantidad,0,0).
 
 cant_por_grupo(Dados,[Res|Resto],[(Res,Count)|Lista]):-
-    cant_por_numero(Dados,Res,Count),  
+    cant_por_numero(Dados,Res,Count),
     %ACA SE PODRIA OPTIMIZAR UN POCO SI SACAMOS LOS DADOS QUE ACABAMOS DE CONTAR, NO TIENE SENTIDO DEJARLOS PORQUE YA CONTASMOS ESOS DADOS, AL SACARLOS, PARA LA SIGUIENTE ITERACION TENDRIAMOS MENOS NUMEROS
     cant_por_grupo(Dados,Resto,Lista).
 cant_por_grupo(_,[],[]).
@@ -630,14 +630,14 @@ calcular_valor_esperado_sup(Categoria,[(Num,Cant,Prob)|RestoProbs],Esperado):-
     Puntaje is Num * Cant,
     X is Puntaje * Prob,
     calcular_valor_esperado_sup(Categoria,RestoProbs,EsperadoAux),
-    Esperado is X + EsperadoAux.   
+    Esperado is X + EsperadoAux.
 calcular_valor_esperado_sup(_,[],0).
 
 calcular_valor_esperado_inferior1(Categoria,[(Tirada,Prob)|Probs],Esperado):-
     puntaje(Tirada,Categoria,Puntos),
     X is Puntos * Prob,
     calcular_valor_esperado_inferior1(Categoria,Probs,EsperadoAux),
-    Esperado is X + EsperadoAux.   
+    Esperado is X + EsperadoAux.
 calcular_valor_esperado_inferior1(_,[],0).
 
 calcular_valor_esperado_inferior2(Categoria,Prob,Esperado):-
@@ -649,7 +649,6 @@ calcular_valor_esperado_inferior2(Categoria,Prob,Esperado):-
     ).
 
 %sabiendo los dados, la categoría y la lista de patrones, devuelve la mejor esperanza y patron
-esperado_patron_categoria(_,_,[],EsperadoFinal,EsperadoFinal,PatronFinal,PatronFinal).
 esperado_patron_categoria(Dados,Categoria,Patron,MejorEsperadoAnterior,EsperadoFinal,MejorPatronAnterior,PatronFinal):-
     probabilidad(Categoria,Patron,Dados,Prob),
      (
@@ -658,8 +657,8 @@ esperado_patron_categoria(Dados,Categoria,Patron,MejorEsperadoAnterior,EsperadoF
         member(Categoria,[full_house, small_straight, large_straight , yahtzee]),calcular_valor_esperado_inferior2(Categoria,Prob,Esperado)
      ),
      (
-     Esperado =< MejorEsperadoAnterior, esperado_patron_categoria(Dados,Categoria,RestoPatrones,MejorEsperadoAnterior,EsperadoFinal,MejorPatronAnterior,PatronFinal);
-     Esperado > MejorEsperadoAnterior, esperado_patron_categoria(Dados,Categoria,RestoPatrones,Esperado,EsperadoFinal,Patron,PatronFinal)
+     Esperado =< MejorEsperadoAnterior, EsperadoFinal is MejorEsperadoAnterior, PatronFinal = MejorPatronAnterior;
+     Esperado > MejorEsperadoAnterior, EsperadoFinal is Esperado, PatronFinal = Patron
      ).
 
 
@@ -673,10 +672,6 @@ mejor_categoria(Dados,[Categoria|RestoCategoria],MejorEsperanzaAnterior,MejorPat
 obtener_categorias_disponibles(Tablero,Categorias):-
      findall(Categoria, member(s(Categoria,nil),Tablero),Categorias).
 
-% cambio_dados([1,1,2,3,4],[s(full_house,nil)],ia_prob,Patron).
-cambio_dados(Dados, Tablero, ia_prob, Patron) :-
-     obtener_categorias_disponibles(Tablero,Categorias),
-     mejor_categoria(Dados,Categorias,0,_,_,Patron).
 % ------------------------------------------------
 
 % Se llama a yahtzee para jugar con un humano
@@ -741,7 +736,7 @@ yahtzeelog(Repetir, Estrategia, Tablero) :-
     yahtzeelog(NuevoRepetir, Estrategia, NuevoTablero).
 
 % ---------------------------------------
-
+%Falta realizar un eleccion_slot_test(Dados, Tablero, ia_prob, Categoria):
 
 eleccion_slot_test(Dados, Tablero, ia_det, Categoria):-
      map_puntajes(Tablero, Dados, PuntajesCategoria),
