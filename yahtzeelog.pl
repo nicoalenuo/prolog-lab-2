@@ -476,9 +476,9 @@ patron_por_numero([],_,[]).
 
 patron_general(Dados, MinimoEsperado, Patron) :-
     maximo_dado_repetido(Dados, Maximo, Cantidad),
-    (MinimoEsperado < Cantidad ,buscoPatronesConMinimo(Dados, MinimoEsperado, Maximo, Patron),!
-    ;
-        buscoPatronesConMinimo(Dados, Cantidad, Maximo, Patron),!
+    (
+        MinimoEsperado < Cantidad ,buscoPatronesConMinimo(Dados, MinimoEsperado, Maximo, Patron),!;
+        patron_por_numero(Dados, Maximo, Patron)
     ).
 
 patron_full(Dados,Patron):-
