@@ -1,16 +1,6 @@
 :- use_module(library(random)).
 :- use_module(library(readutil)).
-:- use_module(library(filesex)).
-:- consult("conexion_problog.pl").
-
-consultar_probabilidad_unica(Categoria, [D1, D2, D3, D4, D5], [X1, X2, X3, X4, X5], Probabilidad):-
-    absolute_file_name(path(problog),Problog,[access(exist),extensions([exe])]),
-    absolute_file_name(modelo,Modelo,[file_type(prolog)]),
-    process_create(Problog, [Modelo, '-a', Categoria, '-a', D1, '-a', D2,'-a', D3,'-a', D4,'-a', D5, '-a', X1, '-a', X2, '-a', X3, '-a', X4, '-a', X5], [stdout(pipe(In))]),
-    read_string(In, _, Result),
-    split_string(Result,"\n\t","\r ",L),
-    append([_, Y], [_], L),
-    number_string(Probabilidad, Y).
+:- consult("conexion_problog.pl"). % Predicados que se comunican con Problog
 
 % Setea el estado inicial del generador de números aleatorios
 iniciar(X):- set_random(seed(X)).
@@ -19,7 +9,7 @@ iniciar(X):- set_random(seed(X)).
 categorias([aces,twos,threes,fours,fives,sixes,three_of_a_kind,four_of_a_kind,full_house,small_straight,large_straight,yahtzee,chance]).
 
 % Tabla con las tres estrategias
-estrategias([humano,ia_det,ia_prob]).
+estrategias([humano, ia_det, ia_prob]).
 
 % Tablero inicial
 inicial([s(aces,nil),s(twos,nil),s(threes,nil),s(fours,nil),s(fives,nil),s(sixes,nil),s(three_of_a_kind,nil),s(four_of_a_kind,nil),s(full_house,nil),s(small_straight,nil),s(large_straight,nil),s(yahtzee,nil),s(chance,nil)]).
@@ -246,7 +236,7 @@ eleccion_slot(Dados, Tablero, ia_det, Categoria):-
      member(s(Categoria, PuntajeCat), PuntajesCategoria),
      PuntajeCat >= 3 * X,  % Le doy preferencia a la seccion superior por encima de three_of_a_kind y four_of_a_kind en caso de que hayan 3 del mismo valor
      \+ member(s(full_house, 25), PuntajesCategoria),
-     \+ member(s(smaill_straight, 30), PuntajesCategoria),
+     \+ member(s(small_straight, 30), PuntajesCategoria),
      \+ member(s(large_straight, 40), PuntajesCategoria),
      \+ member(s(yahtzee, 50), PuntajesCategoria),
      !.
@@ -746,7 +736,7 @@ eleccion_slot_test(Dados, Tablero, ia_det, Categoria):-
      member(s(Categoria, PuntajeCat), PuntajesCategoria),
      PuntajeCat >= 3 * X,  % Le doy preferencia a la seccion superior por encima de three_of_a_kind y four_of_a_kind en caso de que hayan 3 del mismo valor
      \+ member(s(full_house, 25), PuntajesCategoria),
-     \+ member(s(smaill_straight, 30), PuntajesCategoria),
+     \+ member(s(small_straight, 30), PuntajesCategoria),
      \+ member(s(large_straight, 40), PuntajesCategoria),
      \+ member(s(yahtzee, 50), PuntajesCategoria),
      !.
