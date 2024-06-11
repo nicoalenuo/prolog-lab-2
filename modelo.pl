@@ -18,28 +18,37 @@ probabilidad_de_X_N_veces(X, N) :-
     findall(D, dado(D, X), Ds),
     length(Ds, N).
 
-three_of_a_kind([D1, D2, D3, D4, D5]):-
+three_of_a_kind(Tirada):-
     (
-    (dado1(C1), dado2(C1), dado3(C1), D1 = C1, D2 = C1, D3 = C1, dado4(D4), dado5(D5));
-    (dado1(C1), dado2(C1), dado4(C1), D1 = C1, D2 = C1, D4 = C1, dado3(D3), dado5(D5));
-    (dado1(C1), dado2(C1), dado5(C1), D1 = C1, D2 = C1, D5 = C1, dado3(D3), dado4(D4));
-    (dado1(C1), dado3(C1), dado4(C1), D1 = C1, D3 = C1, D4 = C1, dado2(D2), dado5(D5));
-    (dado1(C1), dado3(C1), dado5(C1), D1 = C1, D3 = C1, D5 = C1, dado2(D2), dado4(D4));
-    (dado1(C1), dado4(C1), dado5(C1), D1 = C1, D4 = C1, D5 = C1, dado2(D2), dado3(D3));
-    (dado2(C1), dado3(C1), dado4(C1), D2 = C1, D3 = C1, D4 = C1, dado1(D1), dado5(D5));
-    (dado2(C1), dado3(C1), dado5(C1), D2 = C1, D3 = C1, D5 = C1, dado1(D1), dado4(D4));
-    (dado2(C1), dado4(C1), dado5(C1), D2 = C1, D4 = C1, D5 = C1, dado1(D1), dado3(D3));
-    (dado3(C1), dado4(C1), dado5(C1), D3 = C1, D4 = C1, D5 = C1, dado1(D1), dado2(D2))
+        (
+        dado(1,C1), dado(2,C2), C1=C2, dado(3,C3), C1=C3, dado(4,C4), C1\=C4, dado(5,C5), C1\=C5, Tirada = [C1,C2,C3,C4,C5];
+        dado(1,C1), dado(2,C2), C1=C2, dado(3,C3), C1\=C3, dado(4,C4), C1=C4, dado(5,C5), C1\=C5, Tirada = [C1,C2,C3,C4,C5];
+        dado(1,C1), dado(2,C2), C1=C2, dado(3,C3), C1\=C3, dado(4,C4), C1\=C4, dado(5,C5), C1=C5, Tirada = [C1,C2,C3,C4,C5];
+        dado(1,C1), dado(2,C2), C1\=C2, dado(3,C3), C1=C3, dado(4,C4), C1=C4, dado(5,C5), C1\=C5, Tirada = [C1,C2,C3,C4,C5];
+        dado(1,C1), dado(2,C2), C1\=C2, dado(3,C3), C1=C3, dado(4,C4), C1\=C4, dado(5,C5), C1=C5, Tirada = [C1,C2,C3,C4,C5];
+        dado(1,C1), dado(2,C2), C1\=C2, dado(3,C3), C1\=C3, dado(4,C4), C1=C4, dado(5,C5), C1=C5, Tirada = [C1,C2,C3,C4,C5];
+        dado(1,C1), dado(2,C2), C1\=C2, dado(3,C3), C2=C3, dado(4,C4), C2=C4, dado(5,C5), C2\=C5, Tirada = [C1,C2,C3,C4,C5];
+        dado(1,C1), dado(2,C2), C1\=C2, dado(3,C3), C2=C3, dado(4,C4), C2\=C4, dado(5,C5), C2=C5, Tirada = [C1,C2,C3,C4,C5];
+        dado(1,C1), dado(2,C2), C1\=C2, dado(3,C3), C2\=C3, dado(4,C4), C2=C4, dado(5,C5), C2=C5, Tirada = [C1,C2,C3,C4,C5];
+        dado(1,C1), dado(2,C2), C1\=C3, dado(3,C3), C2\=C3, dado(4,C4), C3=C4, dado(5,C5), C3=C5, Tirada = [C1,C2,C3,C4,C5]
+        );
+        four_of_a_kind(Tirada)
     ).
 
-four_of_a_kind([D1, D2, D3, D4, D5]):-
+four_of_a_kind(Tirada):-
     (
-    (dado1(C1), dado2(C1), dado3(C1), dado4(C1), D1 = C1, D2 = C1, D3 = C1, D4 = C1, dado5(D5));
-    (dado1(C1), dado2(C1), dado3(C1), dado5(C1), D1 = C1, D2 = C1, D3 = C1, D5 = C1, dado4(D4));
-    (dado1(C1), dado2(C1), dado4(C1), dado5(C1), D1 = C1, D2 = C1, D4 = C1, D5 = C1, dado3(D3));
-    (dado1(C1), dado3(C1), dado4(C1), dado5(C1), D1 = C1, D3 = C1, D4 = C1, D5 = C1, dado2(D2));
-    (dado2(C1), dado3(C1), dado4(C1), dado5(C1), D2 = C1, D3 = C1, D4 = C1, D5 = C1, dado1(D1))
+        (
+        dado(1,C1), dado(2,C2), C1=C2, dado(3,C3), C1=C3, dado(4,C4), C1=C4, dado(5,C5), C1\=C5, Tirada = [C1,C2,C3,C4,C5];
+        dado(1,C1), dado(2,C2), C1=C2, dado(3,C3), C1=C3, dado(4,C4), C1\=C4, dado(5,C5), C1=C5, Tirada = [C1,C2,C3,C4,C5];
+        dado(1,C1), dado(2,C2), C1=C2, dado(3,C3), C1\=C3, dado(4,C4), C1=C4, dado(5,C5), C1=C5, Tirada = [C1,C2,C3,C4,C5];
+        dado(1,C1), dado(2,C2), C1\=C2, dado(3,C3), C1=C3, dado(4,C4), C1=C4, dado(5,C5), C1=C5, Tirada = [C1,C2,C3,C4,C5];
+        dado(1,C1), dado(2,C2), C1\=C2, dado(3,C3), C2=C3, dado(4,C4), C2=C4, dado(5,C5), C2=C5, Tirada = [C1,C2,C3,C4,C5]
+        );
+        five_of_a_kind(Tirada)
     ).
+five_of_a_kind(Tirada):-
+    dado(1,C1),dado(2,C1),dado(3,C1),dado(4,C1),dado(5,C1),Tirada = [C1,C1,C1,C1,C1].
+
 
 % Para three y four of a kind interesa saber la probabilidad de que salga cada combinacion en particular, puesto que el puntaje varia dependiendo del resultado, no solo de si se cumple o no
 % Para full_house, small y large straight, y yahtzee, solo interesa saber si se cumple o no la condicion, puesto que el puntaje de estos no varia segun la combinacion
