@@ -401,7 +401,6 @@ cambio_dados(Dados, Tablero, ia_det, Patron) :-
 
 cambio_dados(_, _, ia_det, [1,1,1,1,1]).
 
-% cambio_dados([1,1,2,3,4],[s(full_house,nil)],ia_prob,Patron).
 cambio_dados(Dados, Tablero, ia_prob, Patron) :-
      obtener_categorias_disponibles(Tablero,Categorias),
      time(mejor_categoria(Dados,Categorias,0,_,Esp,Patron,_,MejorCategoria)),
