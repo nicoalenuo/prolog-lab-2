@@ -1,9 +1,7 @@
 :- use_module(library(random)).
 :- use_module(library(filesex)).
 
-tablero_test([s(aces,4), s(twos,2),s(threes,15), s(fours,16), s(fives,10), s(sixes,18),
-    s(three_of_a_kind,20), s(four_of_a_kind,22), s(full_house,0), s(small_straight,0), 
-    s(large_straight,40), s(yahtzee,50),s(chance,10)]).
+tablero_test([s(aces,4), s(twos,2),s(threes,15), s(fours,16), s(fives,10), s(sixes,18),s(three_of_a_kind,20), s(four_of_a_kind,22), s(full_house,0), s(small_straight,0),s(large_straight,40), s(yahtzee,50),s(chance,10)]).
 
 % Setea el estado inicial del generador de números aleatorios
 iniciar(X):- set_random(seed(X)).
@@ -80,3 +78,4 @@ ronda(NumRonda,ia_prob,Tablero,TableroSalida):-
     NumRonda1 is NumRonda +1, 
     writeln('Siguiente ronda...'),
     ronda(NumRonda1,ia_prob,Tablero2,TableroSalida).
+
