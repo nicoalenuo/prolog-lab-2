@@ -485,7 +485,7 @@ patron_full(Dados,Patron):-
     grupos_full(Dados,[Grupo1|Resto]),
     patron_grupo(Dados,Grupo1,0,Patron1),
     (
-        Resto \= [], [Grupo2] = Resto,patron_grupo(Dados,Grupo2,0,Patron2),!;
+        Resto \= [], [Grupo2] = Resto, Grupo2 \= (_,1), patron_grupo(Dados,Grupo2,0,Patron2),!;
         Patron2 = [1,1,1,1,1]
     ),
     fusionarPatrones(Patron1,Patron2,Patron).
@@ -642,11 +642,11 @@ calcular_valor_esperado_inferior1(_,[],0).
 
 calcular_valor_esperado_inferior2(Categoria,Prob,Esperado):-
     (
-        Categoria = full_house,Esperado is Prob * 25,!;
-        Categoria = small_straight,Esperado is Prob * 30,!;
-        Categoria = large_straight,Esperado is Prob * 40,!;
-        Categoria = yahtzee,Esperado is Prob * 50,!
-    ).
+        Categoria = full_house,EsperadoAux is Prob * 25,!;
+        Categoria = small_straight,EsperadoAux is Prob * 30,!;
+        Categoria = large_straight,EsperadoAux is Prob * 40,!;
+        Categoria = yahtzee,EsperadoAux is Prob * 50,!
+    ),Esperado is EsperadoAux * (1).
 
 %sabiendo los dados, la categoría y la lista de patrones, devuelve la mejor esperanza y patron
 esperado_patron_categoria(Dados,Categoria,Patron,MejorCatAnterior,CatFinal,MejorEsperadoAnterior,EsperadoFinal,MejorPatronAnterior,PatronFinal):-
@@ -659,6 +659,7 @@ esperado_patron_categoria(Dados,Categoria,Patron,MejorCatAnterior,CatFinal,Mejor
             member(Categoria,[full_house, small_straight, large_straight, yahtzee]),calcular_valor_esperado_inferior2(Categoria,Prob,Esperado),!
         ),
         (
+        writeln((Categoria,Esperado,Patron)),
         Esperado =< MejorEsperadoAnterior, EsperadoFinal is MejorEsperadoAnterior, PatronFinal = MejorPatronAnterior,CatFinal = MejorCatAnterior,!;
         Esperado > MejorEsperadoAnterior, EsperadoFinal is Esperado, PatronFinal = Patron, CatFinal = Categoria,!
         )
