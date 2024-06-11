@@ -646,7 +646,7 @@ calcular_valor_esperado_inferior2(Categoria,Prob,Esperado):-
         Categoria = small_straight,EsperadoAux is Prob * 30,!;
         Categoria = large_straight,EsperadoAux is Prob * 40,!;
         Categoria = yahtzee,EsperadoAux is Prob * 50,!
-    ),Esperado is EsperadoAux * (1).
+    ),Esperado is EsperadoAux * (1.5).
 
 %sabiendo los dados, la categoría y la lista de patrones, devuelve la mejor esperanza y patron
 esperado_patron_categoria(Dados,Categoria,Patron,MejorCatAnterior,CatFinal,MejorEsperadoAnterior,EsperadoFinal,MejorPatronAnterior,PatronFinal):-
