@@ -653,8 +653,9 @@ esperado_patron_categoria(Dados,Categoria,Patron,MejorEsperadoAnterior,EsperadoF
     probabilidad(Categoria,Patron,Dados,Prob),
      (
         member(Categoria,[aces,twos,threes,fours,fives,sixes]),calcular_valor_esperado_sup(Categoria,Prob,Esperado);
-        member(Categoria,[three_of_a_kind,four_of_a_kind,chance]),calcular_valor_esperado_inferior1(Categoria,Prob,Esperado);
-        member(Categoria,[full_house, small_straight, large_straight , yahtzee]),calcular_valor_esperado_inferior2(Categoria,Prob,Esperado)
+        member(Categoria,[three_of_a_kind,four_of_a_kind]),calcular_valor_esperado_inferior1(Categoria,Prob,Esperado);
+        member(Categoria,[full_house, small_straight, large_straight, yahtzee]),calcular_valor_esperado_inferior2(Categoria,Prob,Esperado);
+        Categoria = chance, Esperado is 0
      ),
      (
      Esperado =< MejorEsperadoAnterior, EsperadoFinal is MejorEsperadoAnterior, PatronFinal = MejorPatronAnterior;
