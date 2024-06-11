@@ -414,7 +414,9 @@ cambio_dados(_, _, ia_det, [1,1,1,1,1]).
 % cambio_dados([1,1,2,3,4],[s(full_house,nil)],ia_prob,Patron).
 cambio_dados(Dados, Tablero, ia_prob, Patron) :-
      obtener_categorias_disponibles(Tablero,Categorias),
-     mejor_categoria(Dados,Categorias,0,_,_,Patron).
+     time(mejor_categoria(Dados,Categorias,0,_,Esp,Patron,_,MejorCategoria)),
+     writeln(Esp),
+     writeln(MejorCategoria).
 
 elegir_patron(_, 0).
 elegir_patron([Patron|RestoPatron], Repetir) :-
@@ -475,12 +477,13 @@ mostrar_tablero([s(Categoria, Puntos) | Resto]) :-
 
 lista_de_listas(Lista1,[Lista1|[]]).
 
-patron_por_numero([],_,[]).
 patron_por_numero([Numero|Dados],Numero,[0|Patron]):-
+    !,
     patron_por_numero(Dados,Numero,Patron).
 patron_por_numero([Dado|Dados],Numero,[1|Patron]):-
     Dado \= Numero,
     patron_por_numero(Dados,Numero,Patron).
+patron_por_numero([],_,[]).
 
 patron_general(Dados, MinimoEsperado, Patron) :-
     maximo_dado_repetido(Dados, Maximo, Cantidad),
@@ -618,22 +621,30 @@ mejor_grupo([],Maximo,Cantidad,Cantidad,Maximo).
 
 obtener_patrones(Dados,Categoria,Patron):-
     (categorias_seccion_superior(Lista), member(m(Tipo,Categoria),Lista), patron_por_numero(Dados,Tipo,Patron),!; %Patron para las categorias superiores
-    Categoria = three_of_a_kind, patron_general(Dados,3,Patron);
-    Categoria = four_of_a_kind, patron_general(Dados,4,Patron);
-    Categoria = full_house, patron_full(Dados,Patron);
-    Categoria = small_straight, patron_escalera_small(Dados,Patron);
-    Categoria = large_straight, patron_escalera_large(Dados,Patron);
-    Categoria = yahtzee, patron_yahtzee(Dados,Patron);
+    Categoria = three_of_a_kind, patron_general(Dados,3,Patron),!;
+    Categoria = four_of_a_kind, patron_general(Dados,4,Patron),!;
+    Categoria = full_house, patron_full(Dados,Patron),!;
+    Categoria = small_straight, patron_escalera_small(Dados,Patron),!;
+    Categoria = large_straight, patron_escalera_large(Dados,Patron),!;
+    Categoria = yahtzee, patron_yahtzee(Dados,Patron),!;
     Categoria = chance, patron_chance(Dados,Patron)
     ).
-calcular_valor_esperado_sup(Categoria,[(Num,Cant,Prob)|RestoProbs],Esperado):-
+calcular_valor_esperado_sup(Categoria,[(NumStr,CantStr,ProbStr)|RestoProbs],Esperado):-
+    string(ProbStr),
+    normalize_space(atom(ProbStrAtom),ProbStr),
+    atom_number(ProbStrAtom,Prob),
+    number_string(Cant,CantStr),
+    number_string(Num,NumStr),
     Puntaje is Num * Cant,
     X is Puntaje * Prob,
     calcular_valor_esperado_sup(Categoria,RestoProbs,EsperadoAux),
     Esperado is X + EsperadoAux.
 calcular_valor_esperado_sup(_,[],0).
 
-calcular_valor_esperado_inferior1(Categoria,[(Tirada,Prob)|Probs],Esperado):-
+calcular_valor_esperado_inferior1(Categoria,[(TiradaStr,ProbStr)|Probs],Esperado):-
+    normalize_space(atom(ProbStrAtom),ProbStr),
+    atom_number(ProbStrAtom,Prob),
+    string_a_lista(TiradaStr,Tirada),
     puntaje(Tirada,Categoria,Puntos),
     X is Puntos * Prob,
     calcular_valor_esperado_inferior1(Categoria,Probs,EsperadoAux),
@@ -649,30 +660,39 @@ calcular_valor_esperado_inferior2(Categoria,Prob,Esperado):-
     ).
 
 %sabiendo los dados, la categoría y la lista de patrones, devuelve la mejor esperanza y patron
-esperado_patron_categoria(Dados,Categoria,Patron,MejorEsperadoAnterior,EsperadoFinal,MejorPatronAnterior,PatronFinal):-
-    probabilidad(Categoria,Patron,Dados,Prob),
-     (
-        member(Categoria,[aces,twos,threes,fours,fives,sixes]),calcular_valor_esperado_sup(Categoria,Prob,Esperado);
-        member(Categoria,[three_of_a_kind,four_of_a_kind]),calcular_valor_esperado_inferior1(Categoria,Prob,Esperado);
-        member(Categoria,[full_house, small_straight, large_straight, yahtzee]),calcular_valor_esperado_inferior2(Categoria,Prob,Esperado);
-        Categoria = chance, Esperado is 0
-     ),
-     (
-     Esperado =< MejorEsperadoAnterior, EsperadoFinal is MejorEsperadoAnterior, PatronFinal = MejorPatronAnterior;
-     Esperado > MejorEsperadoAnterior, EsperadoFinal is Esperado, PatronFinal = Patron
-     ).
+esperado_patron_categoria(Dados,Categoria,Patron,MejorCatAnterior,CatFinal,MejorEsperadoAnterior,EsperadoFinal,MejorPatronAnterior,PatronFinal):-
+    (
+        Categoria = chance, EsperadoFinal is MejorEsperadoAnterior, PatronFinal = MejorPatronAnterior,CatFinal = MejorCatAnterior,!;
+        probabilidad(Categoria,Patron,Dados,Prob),
+        (
+            member(Categoria,[aces,twos,threes,fours,fives,sixes]),calcular_valor_esperado_sup(Categoria,Prob,Esperado),!;
+            member(Categoria,[three_of_a_kind,four_of_a_kind]),calcular_valor_esperado_inferior1(Categoria,Prob,Esperado),!;
+            member(Categoria,[full_house, small_straight, large_straight, yahtzee]),calcular_valor_esperado_inferior2(Categoria,Prob,Esperado),!
+        ),
+        (
+        Esperado =< MejorEsperadoAnterior, EsperadoFinal is MejorEsperadoAnterior, PatronFinal = MejorPatronAnterior,CatFinal = MejorCatAnterior,!;
+        Esperado > MejorEsperadoAnterior, EsperadoFinal is Esperado, PatronFinal = Patron, CatFinal = Categoria,!
+        )
+    ).
 
 
 %sabiendo los dados y las categorias restantes, retorna el mejor patron posible para todas las categorias
-mejor_categoria(_,[],X,Y,X,Y).
-mejor_categoria(Dados,[Categoria|RestoCategoria],MejorEsperanzaAnterior,MejorPatronAnterior,MejorEsperanza,MejorPatron):-  %MejorPatron no se está cargando pero MejorProb si? XD
+mejor_categoria(Dados,[Categoria|RestoCategoria],MejorEsperanzaAnterior,MejorPatronAnterior,MejorEsperanza,MejorPatron,MejorCatAnterior,MejorCatFinal):-  %MejorPatron no se está cargando pero MejorProb si? XD
     obtener_patrones(Dados,Categoria,Patron),
-    esperado_patron_categoria(Dados,Categoria,Patron,MejorEsperanzaAnterior,MejorEsperanzaActual,MejorPatronAnterior,MejorPatronActual),
-    mejor_categoria(Dados,RestoCategoria,MejorEsperanzaActual,MejorPatronActual,MejorEsperanza,MejorPatron).
+    esperado_patron_categoria(Dados,Categoria,Patron,MejorCatAnterior,MejorCatActual,MejorEsperanzaAnterior,MejorEsperanzaActual,MejorPatronAnterior,MejorPatronActual),
+    mejor_categoria(Dados,RestoCategoria,MejorEsperanzaActual,MejorPatronActual,MejorEsperanza,MejorPatron,MejorCatActual,MejorCatFinal).
+mejor_categoria(_,[],X,Y,X,Y,MejorCatFinal,MejorCatFinal):-!.
 
 obtener_categorias_disponibles(Tablero,Categorias):-
      findall(Categoria, member(s(Categoria,nil),Tablero),Categorias).
 
+string_a_lista(String, Lista) :-
+    % Quitar los corchetes
+    sub_atom(String, 1, _, 1, SubString),
+    % Dividir la cadena en elementos individuales
+    split_string(SubString, ",", " ", ElementosString),
+    % Convertir cada elemento a número
+    maplist(atom_number, ElementosString, Lista).
 % ------------------------------------------------
 
 % Se llama a yahtzee para jugar con un humano

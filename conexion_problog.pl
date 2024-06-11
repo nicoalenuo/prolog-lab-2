@@ -2,7 +2,7 @@
 :- use_module(library(persistency)).
 :- dynamic prob/2.
 
-categorias_seccion_superior([m(1, aces), m(2, twos), m(3, threes), m(4, fours), m(5, fives), m(6 ,sixes)]).
+categorias_seccion_superior_aux([m(1, aces), m(2, twos), m(3, threes), m(4, fours), m(5, fives), m(6 ,sixes)]).
 
 consultar_probabilidades(Modelo,Categoria, Probabilidad):-
     absolute_file_name(path(problog), Problog, [access(exist), extensions([exe])]),
@@ -17,7 +17,7 @@ consultar_probabilidades(Modelo,Categoria, Probabilidad):-
         member(Categoria,[three_of_a_kind,four_of_a_kind]),!,
         (
             Categoria = three_of_a_kind,split_string(Result,"three_of_a_kind():\n\t", "three_of_a_kind():\n\t",L),!;
-            Result, split_string(Result,"four_of_a_kind():\n\t", "four_of_a_kind():\n\t",L)
+            split_string(Result,"four_of_a_kind():\n\t", "four_of_a_kind():\n\t",L)
         ),
         lista_valores(L,Probabilidad);
 
@@ -37,11 +37,13 @@ lista_valores2([],[]).
 
 % Predicado para conseguir evidencias
 conseguir_evidencias([0|RestoPatron], [Dado|RestoDados], N, [Evidencia|RestoEvidencias]):-
-    (N =:= 1, Evidencia = evidence(dado(1,Dado), true), N1 is N + 1, conseguir_evidencias(RestoPatron, RestoDados, N1, RestoEvidencias), !);
-    (N =:= 2, Evidencia = evidence(dado(2,Dado), true), N1 is N + 1, conseguir_evidencias(RestoPatron, RestoDados, N1, RestoEvidencias), !);
-    (N =:= 3, Evidencia = evidence(dado(3,Dado), true), N1 is N + 1, conseguir_evidencias(RestoPatron, RestoDados, N1, RestoEvidencias), !);
-    (N =:= 4, Evidencia = evidence(dado(4,Dado), true), N1 is N + 1, conseguir_evidencias(RestoPatron, RestoDados, N1, RestoEvidencias), !);
-    (N =:= 5, Evidencia = evidence(dado(5,Dado), true), N1 is N + 1, conseguir_evidencias(RestoPatron, RestoDados, N1, RestoEvidencias), !).
+    (
+        N =:= 1, Evidencia = evidence(dado(1,Dado), true), N1 is N + 1, conseguir_evidencias(RestoPatron, RestoDados, N1, RestoEvidencias), !;
+        N =:= 2, Evidencia = evidence(dado(2,Dado), true), N1 is N + 1, conseguir_evidencias(RestoPatron, RestoDados, N1, RestoEvidencias), !;
+        N =:= 3, Evidencia = evidence(dado(3,Dado), true), N1 is N + 1, conseguir_evidencias(RestoPatron, RestoDados, N1, RestoEvidencias), !;
+        N =:= 4, Evidencia = evidence(dado(4,Dado), true), N1 is N + 1, conseguir_evidencias(RestoPatron, RestoDados, N1, RestoEvidencias), !;
+        N =:= 5, Evidencia = evidence(dado(5,Dado), true), N1 is N + 1, conseguir_evidencias(RestoPatron, RestoDados, N1, RestoEvidencias), !
+    ).
 conseguir_evidencias([1|RestoPatron], [_|RestoDados], N, Evidencias):-
     N1 is N + 1,
     conseguir_evidencias(RestoPatron, RestoDados, N1, Evidencias).
@@ -55,18 +57,18 @@ enviar_evidencias([Evidencia|Evidencias], Stream):-
 
 enviar_query(Categoria, Stream):-
     (   
-        member(Categoria,[full_house, small_straight, large_straight, yahtzee]),
+        member(Categoria,[full_house, small_straight, large_straight, yahtzee]),!,
         write(Stream, 'query('),
         write(Stream, Categoria),
         writeln(Stream, ').');
 
-        member(Categoria,[three_of_a_kind,four_of_a_kind]),
+        member(Categoria,[three_of_a_kind,four_of_a_kind]),!,
         write(Stream, 'query('),
         write(Stream, Categoria),
         write(Stream, '(Tirada)'),
         writeln(Stream, ').');
 
-        categorias_seccion_superior(Lista),
+        categorias_seccion_superior_aux(Lista),!,
         member(m(Tipo,Categoria),Lista),
 
         write(Stream, 'query('),
@@ -126,4 +128,4 @@ probabilidad(Categoria, Patron, Dados, Probabilidad):-
     enviar_evidencias(Evidencias, Stream),
     enviar_query(Categoria, Stream),
     close(Stream),
-    time(consultar_probabilidades(TmpFile,Categoria, Probabilidad)).
+    consultar_probabilidades(TmpFile,Categoria, Probabilidad).
