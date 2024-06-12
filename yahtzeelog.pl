@@ -43,13 +43,13 @@ puntaje(Dados, Cat, Puntaje) :-
 
 puntaje(Dados, three_of_a_kind, Puntaje) :-
     tiene_n_del_mismo_tipo(Dados, 3, _),
-    sumar_lista(Dados, Puntaje),
+    sum_list(Dados, Puntaje),
     !.
 puntaje(_, three_of_a_kind, 0).
 
 puntaje(Dados, four_of_a_kind, Puntaje) :-
     tiene_n_del_mismo_tipo(Dados, 4, _),
-    sumar_lista(Dados, Puntaje),
+    sum_list(Dados, Puntaje),
     !.
 puntaje(_, four_of_a_kind, 0).
 
@@ -76,7 +76,7 @@ puntaje(Dados, yahtzee, 50) :-
 puntaje(_, yahtzee, 0).
 
 puntaje(Dados, chance, Puntaje) :-
-    sumar_lista(Dados, Puntaje).
+    sum_list(Dados, Puntaje).
 
 % Contar los puntos para categorías de números específicos
 contar([], _, 0).
@@ -87,12 +87,6 @@ contar([Dado | RestoDados], Num, Puntaje) :-
     !.
 contar([_ | RestoDados], Num, Puntaje):-
     contar(RestoDados, Num, Puntaje).
-
-% Sumar los valores de la lista de dados
-sumar_lista([], 0).
-sumar_lista([Dado | RestoDados], Puntaje) :-
-    sumar_lista(RestoDados, PuntajeAux),
-    Puntaje is PuntajeAux + Dado.
 
 % Verificar si hay al menos N dados del mismo tipo, Dado devuelve cual es el numero que lo cumple
 tiene_n_del_mismo_tipo([Dado | RestoDados], N, Dado) :-
@@ -113,7 +107,7 @@ tiene_n_de_tipo([Dado | RestoDados], Tipo, N):-
 
 % Verificar si hay una semi escalera pequeña (3 consecutivos), se usa en el cambiar dados de ia_det
 tiene_semi_escalera_pequenia(Dados) :-
-    sort_unicos(Dados, DadosUnicos),
+    sort(Dados, DadosUnicos),
     member(Sublista,[[1,2,3],[2,3,4],[3,4,5],[4,5,6]]),
     sublist(Sublista, DadosUnicos).
 
@@ -123,30 +117,15 @@ sublist([X|Xs], Ys) :-
     sublist(Xs, Sufijo).
 % Verificar si hay una escalera pequeña (4 consecutivos)
 tiene_escalera_pequenia(Dados) :-
-    sort_unicos(Dados, DadosUnicos),
+    sort(Dados, DadosUnicos),
     member(Escalera, [[1,2,3,4], [2,3,4,5], [3,4,5,6]]),
     append(_, X, DadosUnicos),
     append(Escalera, _, X).
 
 % Verificar si hay una escalera grande (5 consecutivos)
 tiene_escalera_grande(Dados) :-
-    sort_unicos(Dados, DadosUnicos),
+    sort(Dados, DadosUnicos),
     member(DadosUnicos, [[1,2,3,4,5],[2,3,4,5,6]]).
-
-% Hace sort de una lista, y devuelve la lista sin repeticiones
-sort_unicos(List, Sorted) :-
-    sort_unicos(List, [], Sorted).
-
-sort_unicos([], Acc, Acc).
-sort_unicos([H|T], Acc, Sorted) :-
-    insert(H, Acc, NAcc),
-    sort_unicos(T, NAcc, Sorted).
-
-% Inserta de forma ordenada, en caso de que el elemento no este en la lista
-insert(X, [], [X]).
-insert(X, [Y|T], [X,Y|T]) :- X < Y.
-insert(X, [Y|T], [Y|NT]) :- X > Y, insert(X, T, NT).
-insert(X, [X|T], [X|T]).
 
 %---------------------------------------------
 
@@ -245,6 +224,23 @@ eleccion_slot(Dados, Tablero, ia_det, Categoria):- % Devuelvo la categoria que d
      map_puntajes(Tablero, Dados, PuntajesCategoria),
      ordenar_por_puntaje(PuntajesCategoria, [s(Categoria, _) | _]).
 
+eleccion_slot(Dados, Tablero, ia_prob, Categoria):-
+     map_puntajes(Tablero, Dados, PuntajesCategoria),
+     mostrar_slots_disponibles(PuntajesCategoria, 1), nl,
+     categorias_seccion_superior(CategoriasSuperior),
+     member(m(X, Categoria), CategoriasSuperior),
+     member(s(Categoria, PuntajeCat), PuntajesCategoria),
+     PuntajeCat >= 3 * X,  % Le doy preferencia a la seccion superior por encima de three_of_a_kind y four_of_a_kind en caso de que hayan 3 del mismo valor
+     \+ member(s(full_house, 25), PuntajesCategoria),
+     \+ member(s(small_straight, 30), PuntajesCategoria),
+     \+ member(s(large_straight, 40), PuntajesCategoria),
+     \+ member(s(yahtzee, 50), PuntajesCategoria),
+     !.
+
+eleccion_slot(Dados, Tablero, ia_prob, Categoria):- % Devuelvo la categoria que de el mayor puntaje en caso de que no se cumplan las condiciones anteriores
+     map_puntajes(Tablero, Dados, PuntajesCategoria),
+     ordenar_por_puntaje(PuntajesCategoria, [s(Categoria, _) | _]).
+    
 eleccion_slot(Dados, Tablero, ia_prob, Categoria):- % Falta revisar que este bien
      map_puntajes(Tablero, Dados, PuntajesCategoria),
      mostrar_slots_disponibles(PuntajesCategoria, 1), nl,
@@ -262,15 +258,17 @@ eleccion_slot_prob(Dados,[Categoria|RestoCategoria],MejorEsperanza,MejorCat,Cate
      Esperanza > MejorEsperanza,
      eleccion_slot_prob(Dados,RestoCategoria,Esperanza,Categoria,CategoriaFinal)
      ).
+
 % ---------------------------------------------------
+
+
+cambio_dados(_, _, humano, Patron)  :-
+    elegir_patron(Patron, 5).
 
 cambio_dados(Dados, Tablero, ia_det, Patron) :-
     tiene_n_del_mismo_tipo(Dados,5,_),
     member(s(yahtzee,nil),Tablero),
     Patron = [0,0,0,0,0].
-
-cambio_dados(_, _, humano, Patron)  :-
-    elegir_patron(Patron, 5).
 
 cambio_dados(Dados, Tablero, ia_det, Patron) :-
     tiene_n_del_mismo_tipo(Dados,3,Tipo),
@@ -300,14 +298,14 @@ cambio_dados(Dados, Tablero, ia_det, Patron) :-
 cambio_dados(Dados, Tablero, ia_det, Patron) :-
     member(s(large_straight,nil),Tablero),
     tiene_escalera_pequenia(Dados),
-    sort_unicos(Dados,ValoresOrdenados),
+    sort(Dados,ValoresOrdenados),
     creadorPatronEscalera(Dados,ValoresOrdenados,Patron),
     !.
 
 cambio_dados(Dados, Tablero, ia_det, Patron) :-
     member(s(small_straight,nil),Tablero),
     tiene_escalera_pequenia(Dados),
-    sort_unicos(Dados,ValoresOrdenados),
+    sort(Dados,ValoresOrdenados),
     creadorPatronEscalera(Dados,ValoresOrdenados,Patron),
     !.
 
@@ -403,9 +401,7 @@ cambio_dados(_, _, ia_det, [1,1,1,1,1]).
 
 cambio_dados(Dados, Tablero, ia_prob, Patron) :-
      obtener_categorias_disponibles(Tablero,Categorias),
-     time(mejor_categoria(Dados,Categorias,0,_,Esp,Patron,_,MejorCategoria)),
-     writeln(Esp),
-     writeln(MejorCategoria).
+     mejor_categoria(Dados,Categorias,0,_,_,Patron,_,_).
 
 elegir_patron(_, 0).
 elegir_patron([Patron|RestoPatron], Repetir) :-
@@ -476,9 +472,9 @@ patron_por_numero([],_,[]).
 
 patron_general(Dados, MinimoEsperado, Patron) :-
     maximo_dado_repetido(Dados, Maximo, Cantidad),
-    (
-        MinimoEsperado < Cantidad ,buscoPatronesConMinimo(Dados, MinimoEsperado, Maximo, Patron),!;
-        patron_por_numero(Dados, Maximo, Patron)
+    (MinimoEsperado =< Cantidad, buscoPatronesConMinimo(Dados, MinimoEsperado, Maximo, Patron),!
+    ;
+        patron_por_numero(Dados, Maximo, Patron),!
     ).
 
 patron_full(Dados,Patron):-
@@ -491,7 +487,7 @@ patron_full(Dados,Patron):-
     fusionarPatrones(Patron1,Patron2,Patron).
 
 patron_escalera_small(Dados,Patron):-
-    sort_unicos(Dados,Res),
+    sort(Dados,Res),
     (
         member(Sublista,[[1,2,3,4,5]]),sublist(Sublista, Res),patron_secuencia(Dados,Sublista,Patron),!;
         member(Sublista,[[1,2,3,4],[2,3,4,5]]),sublist(Sublista, Res),patron_secuencia(Dados,Sublista,Patron),!;
@@ -502,7 +498,7 @@ patron_escalera_small(Dados,Patron):-
     ).
 
 patron_escalera_large(Dados,Patron):-
-    sort_unicos(Dados,Res),
+    sort(Dados,Res),
     (
         member(Sublista,[[1,2,3,4,5]]),sublist(Sublista, Res),patron_secuencia(Dados,Sublista,Patron),!;
         member(Sublista,[[1,2,3,4],[2,3,4,5]]),sublist(Sublista, Res),patron_secuencia(Dados,Sublista,Patron),!;
@@ -553,7 +549,7 @@ fusionarPatrones([1|Patron1],[1|Patron2],[1|Patron]):-
 fusionarPatrones([],[],[]).
 
 grupos_full(Dados,Grupos):-
-    sort_unicos(Dados,Res),
+    sort(Dados,Res),
     cant_por_grupo(Dados,Res,Lista),
     mejor_grupo(Lista,Maximo,Cantidad,0,0),
     select((Maximo,Cantidad), Lista, Lista2),
@@ -581,7 +577,7 @@ buscoPatronesConMinimo([Dado|Dados],MinimoEsperado,NumeroObj,[1|Patrones]):-
 buscoPatronesConMinimo([],_,_,[]).
 
 maximo_dado_repetido(Dados,Maximo,Cantidad):-
-    sort_unicos(Dados,Res),
+    sort(Dados,Res),
     cant_por_grupo(Dados,Res,Lista),
     mejor_grupo(Lista,Maximo,Cantidad,0,0).
 
@@ -618,22 +614,14 @@ obtener_patrones(Dados,Categoria,Patron):-
     Categoria = yahtzee, patron_yahtzee(Dados,Patron),!;
     Categoria = chance, patron_chance(Dados,Patron)
     ).
-calcular_valor_esperado_sup(Categoria,[(NumStr,CantStr,ProbStr)|RestoProbs],Esperado):-
-    string(ProbStr),
-    normalize_space(atom(ProbStrAtom),ProbStr),
-    atom_number(ProbStrAtom,Prob),
-    number_string(Cant,CantStr),
-    number_string(Num,NumStr),
+calcular_valor_esperado_sup(Categoria,[(Num,Cant,Prob)|RestoProbs],Esperado):-
     Puntaje is Num * Cant,
     X is Puntaje * Prob,
     calcular_valor_esperado_sup(Categoria,RestoProbs,EsperadoAux),
     Esperado is X + EsperadoAux.
 calcular_valor_esperado_sup(_,[],0).
 
-calcular_valor_esperado_inferior1(Categoria,[(TiradaStr,ProbStr)|Probs],Esperado):-
-    normalize_space(atom(ProbStrAtom),ProbStr),
-    atom_number(ProbStrAtom,Prob),
-    string_a_lista(TiradaStr,Tirada),
+calcular_valor_esperado_inferior1(Categoria,[(Tirada,Prob)|Probs],Esperado):-
     puntaje(Tirada,Categoria,Puntos),
     X is Puntos * Prob,
     calcular_valor_esperado_inferior1(Categoria,Probs,EsperadoAux),
@@ -652,7 +640,7 @@ calcular_valor_esperado_inferior2(Categoria,Prob,Esperado):-
 esperado_patron_categoria(Dados,Categoria,Patron,MejorCatAnterior,CatFinal,MejorEsperadoAnterior,EsperadoFinal,MejorPatronAnterior,PatronFinal):-
     (
         Categoria = chance, EsperadoFinal is MejorEsperadoAnterior, PatronFinal = MejorPatronAnterior,CatFinal = MejorCatAnterior,!;
-        probabilidad(Categoria,Patron,Dados,Prob),
+        probabilidad(Categoria,Dados, Patron, Prob),
         (
             member(Categoria,[aces,twos,threes,fours,fives,sixes]),calcular_valor_esperado_sup(Categoria,Prob,Esperado),!;
             member(Categoria,[three_of_a_kind,four_of_a_kind]),calcular_valor_esperado_inferior1(Categoria,Prob,Esperado),!;
@@ -664,7 +652,6 @@ esperado_patron_categoria(Dados,Categoria,Patron,MejorCatAnterior,CatFinal,Mejor
         )
     ).
 
-
 %sabiendo los dados y las categorias restantes, retorna el mejor patron posible para todas las categorias
 mejor_categoria(Dados,[Categoria|RestoCategoria],MejorEsperanzaAnterior,MejorPatronAnterior,MejorEsperanza,MejorPatron,MejorCatAnterior,MejorCatFinal):-  %MejorPatron no se está cargando pero MejorProb si? XD
     obtener_patrones(Dados,Categoria,Patron),
@@ -675,13 +662,6 @@ mejor_categoria(_,[],X,Y,X,Y,MejorCatFinal,MejorCatFinal):-!.
 obtener_categorias_disponibles(Tablero,Categorias):-
      findall(Categoria, member(s(Categoria,nil),Tablero),Categorias).
 
-string_a_lista(String, Lista) :-
-    % Quitar los corchetes
-    sub_atom(String, 1, _, 1, SubString),
-    % Dividir la cadena en elementos individuales
-    split_string(SubString, ",", " ", ElementosString),
-    % Convertir cada elemento a número
-    maplist(atom_number, ElementosString, Lista).
 % ------------------------------------------------
 
 % Se llama a yahtzee para jugar con un humano
@@ -692,7 +672,7 @@ yahtzee(humano, Seed):-
 
 yahtzee(0, Tablero) :-
     puntaje_tablero(Tablero, Puntaje),
-    write('Fin del Juego, se han conseguido '), write(Puntaje), write(' puntos.'),
+    write('Fin del juego, se han conseguido '), write(Puntaje), write(' puntos.'),
     !.
 yahtzee(Repetir, Tablero) :-
     lanzamiento(_, [1,1,1,1,1], Dados),
@@ -728,7 +708,7 @@ yahtzeelog(Estrategia, Seed):-
 
 yahtzeelog(0, _, Tablero) :-
     puntaje_tablero(Tablero, Puntaje),
-    write('Fin del Juego, se han conseguido '), write(Puntaje), write(' puntos.'),
+    write('Fin del juego, se han conseguido '), write(Puntaje), write(' puntos.'),
     !.
 yahtzeelog(Repetir, Estrategia, Tablero) :-
     lanzamiento(_, [1,1,1,1,1], Dados),
@@ -748,7 +728,7 @@ yahtzeelog(Repetir, Estrategia, Tablero) :-
 % ---------------------------------------
 %Falta realizar un eleccion_slot_test(Dados, Tablero, ia_prob, Categoria):
 
-eleccion_slot_test(Dados, Tablero, ia_det, Categoria):-
+eleccion_slot_test(Dados, Tablero, _, Categoria):-
      map_puntajes(Tablero, Dados, PuntajesCategoria),
      categorias_seccion_superior(CategoriasSuperior),
      member(m(X, Categoria), CategoriasSuperior),
@@ -761,7 +741,7 @@ eleccion_slot_test(Dados, Tablero, ia_det, Categoria):-
      !.
 
 %La diferencia entre test y no test es que no estan las salidas intermedias de antes y ahora solo hay unas salidas al final
-eleccion_slot_test(Dados, Tablero, ia_det, Categoria):- % Devuelvo la categoria que de el mayor puntaje en caso de que no se cumplan las condiciones anteriores
+eleccion_slot_test(Dados, Tablero, _, Categoria):- % Devuelvo la categoria que de el mayor puntaje en caso de que no se cumplan las condiciones anteriores
      map_puntajes(Tablero, Dados, PuntajesCategoria),
      ordenar_por_puntaje(PuntajesCategoria, [s(Categoria, _) | _]).
 
@@ -784,6 +764,12 @@ suma_desviacion([Puntaje|Puntajes],Media,Suma,SumaDesviacion) :-
     NuevaSuma is (Suma + ((Puntaje - Media) * (Puntaje - Media))),
     suma_desviacion(Puntajes,Media,NuevaSuma,SumaDesviacion).
 
+
+%realiza muchos tests para diferentes seed para Estrategia = [ia_det,ia_prob]
+test_masivo(Estrategia, Cantidad):-
+    test_masivo(Estrategia,1,Cantidad,0,[]),
+    !.
+
 % Si se quiere, se puede imprimir todos los datos que se quieran evaluar, no solo la media y la desviación, además podría ser el puntaje de alguna categoría en especifico, cuantas veces se obtiene el bonus, el max y min puntos alcanzado, etc.
 test_masivo(_,_,0,PuntajeTotal,Desviacion) :-
     length(Desviacion, N),
@@ -794,7 +780,9 @@ test_masivo(_,_,0,PuntajeTotal,Desviacion) :-
     write('La media es de '), write(Media),write(' puntos.'), nl,
     write('La desviacion es de '), write(DesviacionFinal), write(' puntos'),
     !.
+
 test_masivo(Estrategia,Seed,Cantidad,PuntajeTotal,Desviacion):-
+    write(Cantidad), write(' pruebas restantes.'), nl,
     estrategias(Ests),
     member(Estrategia, Ests),
     inicial(Tablero),
@@ -807,8 +795,5 @@ test_masivo(Estrategia,Seed,Cantidad,PuntajeTotal,Desviacion):-
     append([Puntaje],Desviacion,NuevaDesviacion),
     test_masivo(Estrategia,NuevoSeed,NuevaCantidad,NuevoPuntajeTotal,NuevaDesviacion).
 
-%realiza muchos tests para diferentes seed para Estrategia = [ia_det,ia_prob]
-test_masivo(Estrategia,Cantidad):-
-    test_masivo(Estrategia,1,Cantidad,0,[]).
 
 % ---------------------------

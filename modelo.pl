@@ -6,12 +6,6 @@
 1/6::dado(4, 1); 1/6::dado(4, 2); 1/6::dado(4, 3); 1/6::dado(4, 4); 1/6::dado(4, 5); 1/6::dado(4, 6).
 1/6::dado(5, 1); 1/6::dado(5, 2); 1/6::dado(5, 3); 1/6::dado(5, 4); 1/6::dado(5, 5); 1/6::dado(5, 6).
 
-1/6::dado1(1); 1/6::dado1(2); 1/6::dado1(3); 1/6::dado1(4); 1/6::dado1(5); 1/6::dado1(6).
-1/6::dado2(1); 1/6::dado2(2); 1/6::dado2(3); 1/6::dado2(4); 1/6::dado2(5); 1/6::dado2(6).
-1/6::dado3(1); 1/6::dado3(2); 1/6::dado3(3); 1/6::dado3(4); 1/6::dado3(5); 1/6::dado3(6).
-1/6::dado4(1); 1/6::dado4(2); 1/6::dado4(3); 1/6::dado4(4); 1/6::dado4(5); 1/6::dado4(6).
-1/6::dado5(1); 1/6::dado5(2); 1/6::dado5(3); 1/6::dado5(4); 1/6::dado5(5); 1/6::dado5(6).
-
 % La implementacion se hace asi para reducir en gran medida la cantidad de chequeos ( y por lo tanto el tiempo de ejecucion )
 
 probabilidad_de_X_N_veces(X, N) :-
@@ -46,6 +40,7 @@ four_of_a_kind(Tirada):-
         );
         five_of_a_kind(Tirada)
     ).
+    
 five_of_a_kind(Tirada):-
     dado(1,C1),dado(2,C1),dado(3,C1),dado(4,C1),dado(5,C1),Tirada = [C1,C1,C1,C1,C1].
 
@@ -107,4 +102,5 @@ large_straight:-
 
 yahtzee:-
     dado(1,C1), dado(2,C1), dado(3,C1), dado(4,C1), dado(5,C1).
+
 
