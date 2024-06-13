@@ -207,60 +207,30 @@ eleccion_slot(Dados, Tablero, humano, Categoria) :-
         eleccion_slot(Dados, Tablero, humano, Categoria)
     ).
 
-eleccion_slot(Dados, Tablero, ia_det, Categoria):-
-     map_puntajes(Tablero, Dados, PuntajesCategoria),
-     mostrar_slots_disponibles(PuntajesCategoria, 1), nl,
-     categorias_seccion_superior(CategoriasSuperior),
-     member(m(X, Categoria), CategoriasSuperior),
-     member(s(Categoria, PuntajeCat), PuntajesCategoria),
-     PuntajeCat >= 3 * X,  % Le doy preferencia a la seccion superior por encima de three_of_a_kind y four_of_a_kind en caso de que hayan 3 del mismo valor
-     \+ member(s(full_house, 25), PuntajesCategoria),
-     \+ member(s(small_straight, 30), PuntajesCategoria),
-     \+ member(s(large_straight, 40), PuntajesCategoria),
-     \+ member(s(yahtzee, 50), PuntajesCategoria),
-     !.
+eleccion_slot(Dados, Tablero, _, Categoria):-
+    map_puntajes(Tablero, Dados, PuntajesCategoria),
+    categorias_seccion_superior(CategoriasSuperior),
+    member(m(X, Categoria), CategoriasSuperior),
+    member(s(Categoria, PuntajeCat), PuntajesCategoria),
+    PuntajeCat >= 3 * X,  % Le doy preferencia a la seccion superior por encima de three_of_a_kind y four_of_a_kind en caso de que hayan 3 del mismo valor
+    \+ member(s(full_house, 25), PuntajesCategoria),
+    \+ member(s(small_straight, 30), PuntajesCategoria),
+    \+ member(s(large_straight, 40), PuntajesCategoria),
+    \+ member(s(yahtzee, 50), PuntajesCategoria),
+    !.
 
-eleccion_slot(Dados, Tablero, ia_det, Categoria):- % Devuelvo la categoria que de el mayor puntaje en caso de que no se cumplan las condiciones anteriores
-     map_puntajes(Tablero, Dados, PuntajesCategoria),
-     ordenar_por_puntaje(PuntajesCategoria, [s(Categoria, _) | _]).
+eleccion_slot(Dados, Tablero, _, Categoria): % Dejo chance como ultima opcion si no hay una categoria que de mas puntos
+    map_puntajes(Tablero, Dados, PuntajesCategoria),
+    ordenar_por_puntaje(PuntajesCategoria, PuntajesOrdenados),
+    PuntajesOrdenados = [s(chance, _), s(Categoria, PuntajeSegundaCategoria) | _],
+    PuntajeSegundaCategoria > 0,
+    !.
 
-eleccion_slot(Dados, Tablero, ia_prob, Categoria):-
-     map_puntajes(Tablero, Dados, PuntajesCategoria),
-     mostrar_slots_disponibles(PuntajesCategoria, 1), nl,
-     categorias_seccion_superior(CategoriasSuperior),
-     member(m(X, Categoria), CategoriasSuperior),
-     member(s(Categoria, PuntajeCat), PuntajesCategoria),
-     PuntajeCat >= 3 * X,  % Le doy preferencia a la seccion superior por encima de three_of_a_kind y four_of_a_kind en caso de que hayan 3 del mismo valor
-     \+ member(s(full_house, 25), PuntajesCategoria),
-     \+ member(s(small_straight, 30), PuntajesCategoria),
-     \+ member(s(large_straight, 40), PuntajesCategoria),
-     \+ member(s(yahtzee, 50), PuntajesCategoria),
-     !.
-
-eleccion_slot(Dados, Tablero, ia_prob, Categoria):- % Devuelvo la categoria que de el mayor puntaje en caso de que no se cumplan las condiciones anteriores
-     map_puntajes(Tablero, Dados, PuntajesCategoria),
-     ordenar_por_puntaje(PuntajesCategoria, [s(Categoria, _) | _]).
-    
-eleccion_slot(Dados, Tablero, ia_prob, Categoria):- % Falta revisar que este bien
-     map_puntajes(Tablero, Dados, PuntajesCategoria),
-     mostrar_slots_disponibles(PuntajesCategoria, 1), nl,
-     obtener_categorias_disponibles(Tablero,Categorias),
-     eleccion_slot_prob(Dados,Categorias,0,_,Categoria).
-
-eleccion_slot_prob(_,[],_,CategoriaFinal,CategoriaFinal).
-eleccion_slot_prob(Dados,[Categoria|RestoCategoria],MejorEsperanza,MejorCat,CategoriaFinal):- % Falta revisar que este bien
-     probabilidad(Categoria,[1,1,1,1,1],Dados,Prob), %funcion implementada en problog
-     puntaje(Dados,Categoria,Puntos),
-     Esperanza is Prob * Puntos,
-     (
-     Esperanza =< MejorEsperanza,
-     eleccion_slot_prob(Dados,RestoCategoria,MejorEsperanza,MejorCat,CategoriaFinal);
-     Esperanza > MejorEsperanza,
-     eleccion_slot_prob(Dados,RestoCategoria,Esperanza,Categoria,CategoriaFinal)
-     ).
+eleccion_slot(Dados, Tablero, _, Categoria):- % Devuelvo la categoria que de el mayor puntaje en caso de que no se cumplan las condiciones anteriores
+    map_puntajes(Tablero, Dados, PuntajesCategoria),
+    ordenar_por_puntaje(PuntajesCategoria, [s(Categoria, _) | _]).
 
 % ---------------------------------------------------
-
 
 cambio_dados(_, _, humano, Patron)  :-
     elegir_patron(Patron, 5).
@@ -457,6 +427,12 @@ mostrar_tablero([s(Categoria, nil) | Resto]) :-
 mostrar_tablero([s(Categoria, Puntos) | Resto]) :-
     write(' -'), write(Categoria), write(': '), write(Puntos), write(' puntos.'), nl,
     mostrar_tablero(Resto).
+
+mostrar_tablero_final([]):-
+    nl, !.
+mostrar_tablero_final([s(Categoria, Puntaje) | RestoTablero]):-
+    write(' -'), write(Categoria), write(': '), write(Puntaje), nl,
+    mostrar_tablero_final(RestoTablero).
 
 % ------------------------------------------------
 
@@ -709,6 +685,7 @@ yahtzeelog(Estrategia, Seed):-
 yahtzeelog(0, _, Tablero) :-
     puntaje_tablero(Tablero, Puntaje),
     write('Fin del juego, se han conseguido '), write(Puntaje), write(' puntos.'),
+    mostrar_tablero_final(Tablero),
     !.
 yahtzeelog(Repetir, Estrategia, Tablero) :-
     lanzamiento(_, [1,1,1,1,1], Dados),
@@ -726,25 +703,6 @@ yahtzeelog(Repetir, Estrategia, Tablero) :-
     yahtzeelog(NuevoRepetir, Estrategia, NuevoTablero).
 
 % ---------------------------------------
-%Falta realizar un eleccion_slot_test(Dados, Tablero, ia_prob, Categoria):
-
-eleccion_slot_test(Dados, Tablero, _, Categoria):-
-     map_puntajes(Tablero, Dados, PuntajesCategoria),
-     categorias_seccion_superior(CategoriasSuperior),
-     member(m(X, Categoria), CategoriasSuperior),
-     member(s(Categoria, PuntajeCat), PuntajesCategoria),
-     PuntajeCat >= 3 * X,  % Le doy preferencia a la seccion superior por encima de three_of_a_kind y four_of_a_kind en caso de que hayan 3 del mismo valor
-     \+ member(s(full_house, 25), PuntajesCategoria),
-     \+ member(s(small_straight, 30), PuntajesCategoria),
-     \+ member(s(large_straight, 40), PuntajesCategoria),
-     \+ member(s(yahtzee, 50), PuntajesCategoria),
-     !.
-
-%La diferencia entre test y no test es que no estan las salidas intermedias de antes y ahora solo hay unas salidas al final
-eleccion_slot_test(Dados, Tablero, _, Categoria):- % Devuelvo la categoria que de el mayor puntaje en caso de que no se cumplan las condiciones anteriores
-     map_puntajes(Tablero, Dados, PuntajesCategoria),
-     ordenar_por_puntaje(PuntajesCategoria, [s(Categoria, _) | _]).
-
 
 yahtzeelog_test(0, _, Tablero, Tablero).
 yahtzeelog_test(Repetir, Estrategia, Tablero, UltimoTablero) :-
@@ -753,7 +711,7 @@ yahtzeelog_test(Repetir, Estrategia, Tablero, UltimoTablero) :-
     lanzamiento(Dados, Patron1, NuevosDados1),
     cambio_dados(NuevosDados1, Tablero, Estrategia, Patron2),
     lanzamiento(NuevosDados1, Patron2, NuevosDados2),
-    eleccion_slot_test(NuevosDados2, Tablero, Estrategia, CategoriaSlot),
+    eleccion_slot(NuevosDados2, Tablero, Estrategia, CategoriaSlot),
     puntaje(NuevosDados2, CategoriaSlot, PuntosCategoriaSeleccionada),
     ajustar_tablero(Tablero, CategoriaSlot, PuntosCategoriaSeleccionada, NuevoTablero),
     NuevoRepetir is Repetir - 1,
@@ -767,7 +725,7 @@ suma_desviacion([Puntaje|Puntajes],Media,Suma,SumaDesviacion) :-
 
 %realiza muchos tests para diferentes seed para Estrategia = [ia_det,ia_prob]
 test_masivo(Estrategia, Cantidad):-
-    test_masivo(Estrategia,1,Cantidad,0,[]),
+    test_masivo(Estrategia,1,Cantidad, 0, []),
     !.
 
 % Si se quiere, se puede imprimir todos los datos que se quieran evaluar, no solo la media y la desviación, además podría ser el puntaje de alguna categoría en especifico, cuantas veces se obtiene el bonus, el max y min puntos alcanzado, etc.

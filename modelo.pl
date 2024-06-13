@@ -30,19 +30,11 @@ three_of_a_kind(Tirada):-
     ).
 
 four_of_a_kind(Tirada):-
-    (
-        (
-        dado(1,C1), dado(2,C2), C1=C2, dado(3,C3), C1=C3, dado(4,C4), C1=C4, dado(5,C5), C1\=C5, Tirada = [C1,C2,C3,C4,C5];
-        dado(1,C1), dado(2,C2), C1=C2, dado(3,C3), C1=C3, dado(4,C4), C1\=C4, dado(5,C5), C1=C5, Tirada = [C1,C2,C3,C4,C5];
-        dado(1,C1), dado(2,C2), C1=C2, dado(3,C3), C1\=C3, dado(4,C4), C1=C4, dado(5,C5), C1=C5, Tirada = [C1,C2,C3,C4,C5];
-        dado(1,C1), dado(2,C2), C1\=C2, dado(3,C3), C1=C3, dado(4,C4), C1=C4, dado(5,C5), C1=C5, Tirada = [C1,C2,C3,C4,C5];
-        dado(1,C1), dado(2,C2), C1\=C2, dado(3,C3), C2=C3, dado(4,C4), C2=C4, dado(5,C5), C2=C5, Tirada = [C1,C2,C3,C4,C5]
-        );
-        five_of_a_kind(Tirada)
-    ).
-    
-five_of_a_kind(Tirada):-
-    dado(1,C1),dado(2,C1),dado(3,C1),dado(4,C1),dado(5,C1),Tirada = [C1,C1,C1,C1,C1].
+    (Tirada = [C,C,C,C,D5], dado(1, C), dado(2, C), dado(3, C), dado(4, C), dado(5, D5));
+    (Tirada = [C,C,C,D4,C], dado(1, C), dado(2, C), dado(3, C), dado(4, D4), dado(5, C));
+    (Tirada = [C,C,D3,C,C], dado(1, C), dado(2, C), dado(3, D3), dado(4, C), dado(5, C));
+    (Tirada = [C,D2,C,C,C], dado(1, C), dado(2, D2), dado(3, C), dado(4, C), dado(5, C));
+    (Tirada = [D1,C,C,C,C], dado(1, D1), dado(2, C), dado(3, C), dado(4, C), dado(5, C)).
 
 
 % Para three y four of a kind interesa saber la probabilidad de que salga cada combinacion en particular, puesto que el puntaje varia dependiendo del resultado, no solo de si se cumple o no

@@ -36,4 +36,3 @@ Los siguientes archivos deben estar en la misma carpeta para poder ejecutarse.
 #### Juego con estrategia
 
 `yahtzeelog(Estrategia, Seed)`, donde Estrategia puede ser ia_det o ia_prob, y Seed un numero que funciona como semilla de numeros aleatorios.
-
