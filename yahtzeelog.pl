@@ -219,7 +219,7 @@ eleccion_slot(Dados, Tablero, _, Categoria):-
     \+ member(s(yahtzee, 50), PuntajesCategoria),
     !.
 
-eleccion_slot(Dados, Tablero, _, Categoria): % Dejo chance como ultima opcion si no hay una categoria que de mas puntos
+eleccion_slot(Dados, Tablero, _, Categoria):- % Dejo chance como ultima opcion si no hay una categoria que de mas puntos
     map_puntajes(Tablero, Dados, PuntajesCategoria),
     ordenar_por_puntaje(PuntajesCategoria, PuntajesOrdenados),
     PuntajesOrdenados = [s(chance, _), s(Categoria, PuntajeSegundaCategoria) | _],
