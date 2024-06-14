@@ -129,7 +129,7 @@ tiene_escalera_grande(Dados) :-
 
 %---------------------------------------------
 
-puntaje_tablero_seccion_superior([s(sixes | Puntaje) | _], Puntaje) :- !.
+puntaje_tablero_seccion_superior([s(sixes, Puntaje) | _], Puntaje) :- !.
 puntaje_tablero_seccion_superior([s(_, PuntajeCategoria) | RestoTablero], Puntaje):-
     puntaje_tablero_seccion_superior(RestoTablero, PuntajeAux),
     Puntaje is PuntajeAux + PuntajeCategoria.
@@ -221,8 +221,7 @@ eleccion_slot(Dados, Tablero, _, Categoria):-
 
 eleccion_slot(Dados, Tablero, _, Categoria):- % Dejo chance como ultima opcion si no hay una categoria que de mas puntos
     map_puntajes(Tablero, Dados, PuntajesCategoria),
-    ordenar_por_puntaje(PuntajesCategoria, PuntajesOrdenados),
-    PuntajesOrdenados = [s(chance, _), s(Categoria, PuntajeSegundaCategoria) | _],
+    ordenar_por_puntaje(PuntajesCategoria, [s(chance, _), s(Categoria, PuntajeSegundaCategoria) | _]),
     PuntajeSegundaCategoria > 0,
     !.
 
@@ -684,7 +683,7 @@ yahtzeelog(Estrategia, Seed):-
 
 yahtzeelog(0, _, Tablero) :-
     puntaje_tablero(Tablero, Puntaje),
-    write('Fin del juego, se han conseguido '), write(Puntaje), write(' puntos.'),
+    write('Fin del juego, se han conseguido '), write(Puntaje), write(' puntos.'), nl,
     mostrar_tablero_final(Tablero),
     !.
 yahtzeelog(Repetir, Estrategia, Tablero) :-
