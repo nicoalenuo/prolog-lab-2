@@ -696,6 +696,7 @@ yahtzeelog(Repetir, Estrategia, Tablero) :-
     lanzamiento(NuevosDados1, Patron2, NuevosDados2),
     write('Dados: '), write(NuevosDados2), nl,
     eleccion_slot(NuevosDados2, Tablero, Estrategia, CategoriaSlot),
+    write('Se ha elegido la categoria '), write(CategoriaSlot), nl,
     puntaje(NuevosDados2, CategoriaSlot, PuntosCategoriaSeleccionada),
     ajustar_tablero(Tablero, CategoriaSlot, PuntosCategoriaSeleccionada, NuevoTablero),
     NuevoRepetir is Repetir - 1,
