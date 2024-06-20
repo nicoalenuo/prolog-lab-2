@@ -13,7 +13,7 @@ Los siguientes archivos deben estar en la misma carpeta para poder ejecutarse.
 
 - yahtzeelog.pl: Archivo con la logica principal del programa
 - modelo.pl: Contiene los predicados en problog
-- conexion_problog.pl: Archivo para conecta yahtzeelog.pl con modelo.pl
+- conexion_problog.pl: Archivo para conectar yahtzeelog.pl con modelo.pl
 
 ## Ejecución de yahtzeelog
 
